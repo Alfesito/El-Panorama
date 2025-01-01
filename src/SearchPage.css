@@ -1,0 +1,49 @@
+.buscador {
+    margin-bottom: 20px;
+  }
+  
+  .search-filter-row {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+  }
+  
+  .col {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  #filtro {
+    padding: 8px;
+    font-size: 16px;
+    width: 300px;
+  }
+  
+  #buscador {
+    padding: 8px 12px;
+    font-size: 16px;
+    cursor: pointer;
+  }
+  
+  #selector {
+    padding: 8px;
+    font-size: 16px;
+    width: 150px;
+  }
+  
+  #productosresultados ul {
+    list-style: none;
+    padding: 0;
+  }
+  
+  .result-item {
+    margin-bottom: 20px;
+  }
+  
+  .unproducto {
+    border: 1px solid #ddd;
+    padding: 15px;
+    border-radius: 5px;
+  }
+  
