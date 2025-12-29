@@ -3,158 +3,238 @@ from bs4 import BeautifulSoup
 import requests
 from unidecode import unidecode
 from datetime import datetime
+from collections import OrderedDict
+import re
+import hashlib
+import base64
 
 def clean_text(text):
-    """
-    Elimina caracteres Unicode especiales y normaliza tildes.
-    """
-    # Normaliza el texto y elimina caracteres con tildes
-    text = unidecode(text)
+    if not text:
+        return ""
+    text = unidecode(text.strip())
     return text
 
-def fecha_actual():
-    return datetime.now().strftime('%d %b %Y')
+def normalize_datetime(date_str):
+    """ISO 8601 completo: YYYY-MM-DDThh:mm:ss.sssZ"""
+    if not date_str:
+        now = datetime.utcnow()
+        return now.strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3] + 'Z'
+    
+    patterns = [
+        r'(\d{1,2})\s*(ene|feb|mar|abr|may|jun|jul|ago|sep|oct|nov|dic)\.?\s+(\d{4})\s+(\d{1,2}):(\d{2})',
+        r'(\d{4})-(\d{1,2})-(\d{1,2})T(\d{2}):(\d{2}):(\d{2})',
+        r'(\d{1,2}/\d{1,2}/\d{4})\s+(\d{1,2}):(\d{2})'
+    ]
+    
+    meses = {
+        'ene': '01', 'feb': '02', 'mar': '03', 'abr': '04', 'may': '05',
+        'jun': '06', 'jul': '07', 'ago': '08', 'sep': '09', 'oct': '10',
+        'nov': '11', 'dic': '12'
+    }
+    
+    for pattern in patterns:
+        match = re.search(pattern, date_str)
+        if match:
+            if 'ene' in pattern:
+                dia, mes, ano, hora, minuto = match.groups()
+                mes_num = meses.get(mes)
+                if mes_num:
+                    return f"{ano}-{mes_num}-{dia.zfill(2)}T{hora.zfill(2)}:{minuto}:00.000Z"
+            elif len(match.groups()) >= 4:
+                ano, mes, dia, hora, minuto, segundo = match.groups()[:6]
+                return f"{ano}-{mes.zfill(2)}-{dia.zfill(2)}T{hora}:{minuto}:{segundo or '00'}.000Z"
+    
+    now = datetime.utcnow()
+    return now.strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3] + 'Z'
+
+def encode_to_base62(data):
+    hash_obj = hashlib.md5(data.encode('utf-8'))
+    b64 = base64.b64encode(hash_obj.digest()).decode('utf-8')
+    base62 = b64.replace('+', 'Z').replace('/', 'Y').replace('=', 'X')
+    return base62[:6].upper()
+
+def generate_short_id(newspaper, datetime_str, title):
+    content = f"{datetime_str}{title[:30]}{newspaper}"
+    return encode_to_base62(content)
+
+def parse_srcset(srcset):
+    if not srcset:
+        return ''
+    urls = srcset.split(',')[0].strip().split(' ')[0]
+    if urls.startswith('http'):
+        return urls
+    return ''
+
+def extract_image(soup):
+    try:
+        main_figure = soup.find('figure', class_='am am-h')
+        if main_figure:
+            img = main_figure.find('img')
+            if img:
+                img_url = (img.get('src') or 
+                          img.get('data-src') or 
+                          parse_srcset(img.get('srcset', '')))
+                if img_url:
+                    credits_span = main_figure.find('span', class_='amm')
+                    credits = clean_text(credits_span.text) if credits_span else ''
+                    return {'url': img_url, 'credits': credits}
+        
+        figure = soup.find('figure')
+        if figure:
+            img = figure.find('img')
+            if img:
+                img_url = (img.get('src') or 
+                          img.get('data-src') or 
+                          parse_srcset(img.get('srcset', '')))
+                credits_span = figure.find('span', class_='amm') or figure.find('figcaption')
+                credits = clean_text(credits_span.text) if credits_span else ''
+                return {'url': img_url, 'credits': credits}
+        
+        meta_image = soup.find('meta', property='og:image')
+        if meta_image:
+            return {'url': meta_image.get('content', ''), 'credits': ''}
+        
+        return {'url': '', 'credits': ''}
+    except Exception:
+        return {'url': '', 'credits': ''}
 
 def scrape_article_details(url):
-    """
-    Scrapea los detalles del artículo, extrayendo el texto de <h2> dentro del primer <div> en el <header>
-    y el texto dentro de los <li> dentro de un <section> con el atributo data-dtm-region="articulo_archivado-en".
-    """
     try:
-        response = requests.get(url)
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        }
+        response = requests.get(url, headers=headers, timeout=15)
         response.raise_for_status()
-        
-        # Analiza el contenido HTML
         soup = BeautifulSoup(response.text, 'html.parser')
         
-        # Navega hacia el primer <article> dentro del <body>
-        article = soup.find('article')
-        if not article:
-            return {'error': f'No se encontró el artículo en {url}'}
-
-        # Navega hacia el <header> y luego al primer <div> dentro de él
-        header = article.find('header')
-        if not header:
-            return {'error': 'No se encontró el <header> en el artículo'}
-
-        first_div = header.find('div')
-        if not first_div:
-            return {'error': 'No se encontró el primer <div> dentro del <header>'}
-
-        # Extrae el texto de <h2>
-        h2_tag = first_div.find('h2')
-        if not h2_tag:
-            return {'error': 'No se encontró el <h2> dentro del primer <div> en el <header>'}
-
-        # Extrae el texto de <li> dentro de un <section> con data-dtm-region="articulo_archivado-en"
-        archived_section = article.find('section', {'data-dtm-region': 'articulo_archivado-en'})
+        title_h1 = soup.find('h1', class_='at')
+        title = clean_text(title_h1.text) if title_h1 else ''
+        
+        subtitle_p = soup.find('p', class_='ast')
+        subtitle = clean_text(subtitle_p.text) if subtitle_p else ''
+        
         tags = []
+        archived_section = soup.find('section', {'data-dtm-region': 'articulo_archivado-en'})
         if archived_section:
-            li_tags = archived_section.find_all('li')
-            tags = [clean_text(li.text.strip()) for li in li_tags]
-
+            tags = [clean_text(li.text) for li in archived_section.find_all('li')]
+        
+        body_paragraphs = []
+        cuerpo_section = soup.find('div', {'data-dtm-region': 'articulo_cuerpo'})
+        if cuerpo_section:
+            body_paragraphs = cuerpo_section.find_all('p')[:15]
+        else:
+            body_paragraphs = soup.find_all('p', limit=15)
+        
+        body = ' '.join([clean_text(p.text) for p in body_paragraphs if len(clean_text(p.text)) > 30])
+        
+        image = extract_image(soup)
+        
         return {
-            'subtitles': clean_text(h2_tag.text.strip()),
-            'tags': tags
+            'title': title,
+            'subtitle': subtitle,
+            'tags': tags[:8],
+            'body': body[:3000],
+            'image': image
         }
-
+    
     except Exception as e:
-        return {'error': str(e)}
+        print(f"Error scraping details {url}: {e}")
+        return {'title': '', 'subtitle': '', 'tags': [], 'body': '', 'image': {'url': '', 'credits': ''}}
+
+def create_ordered_article(newspaper, article_id, date, tags, title, subtitle, url, author, image, body):
+    """
+    Crea artículo con ORDEN EXACTO: ID PRIMERO
+    """
+    return OrderedDict([
+        ('id', article_id),        # ← 1º ID
+        ('newspaper', newspaper),  # 2º
+        ('date', date),            # 3º
+        ('tags', tags),            # 4º
+        ('title', title),          # 5º
+        ('subtitle', subtitle),    # 6º
+        ('url', url),              # 7º
+        ('author', author),        # 8º
+        ('image', image),          # 9º
+        ('body', body)             # 10º
+    ])
 
 def scrape_all_articles(url):
-    """
-    Extrae todos los artículos de todas las <section> presentes en el <main>.
-    """
     try:
-        # Realiza la solicitud al sitio web
-        response = requests.get(url)
-        response.raise_for_status()  # Lanza error si falla la solicitud
-
-        # Analiza el contenido HTML
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        }
+        response = requests.get(url, headers=headers, timeout=15)
+        response.raise_for_status()
         soup = BeautifulSoup(response.text, 'html.parser')
-
-        # Encuentra el contenedor principal <main>
+        
         main = soup.find('main')
         if not main:
-            return {'error': 'No se encontró el elemento <main>'}
+            return {'error': 'No se encontró <main>'}
 
-        # Encuentra todas las <section> dentro de <main>
-        sections = main.find_all('section')
-        if not sections:
-            return {'error': 'No se encontraron <section> dentro de <main>'}
-
-        # Almacena los resultados
         results = []
+        sections = main.find_all('section')
 
-        # Itera a través de cada <section>
         for section in sections:
-            # Encuentra todos los <article> dentro de la sección
             articles = section.find_all('article')
-            if not articles:
-                continue  # Salta la sección si no tiene artículos
-
-            # Procesa cada artículo
             for article in articles:
-                # Extraer título y URL
-                title_tag = article.find('h2').find('a')
-                title = None
-                link = None
-                if title_tag:
-                    raw_title = title_tag.text.strip()
-                    title = clean_text(raw_title)
-                    link = title_tag['href']
-                
-                # Extraer autor y fecha
-                metadata_div = article.find('div')
-                author = None
-                date = None
+                h2_tag = article.find('h2')
+                title_tag = h2_tag.find('a') if h2_tag else None
+                list_title = clean_text(title_tag.text) if title_tag else ''
+                link = title_tag.get('href') if title_tag else ''
 
+                if not link or not list_title:
+                    continue
+
+                if link.startswith('/'):
+                    link = 'https://elpais.com' + link
+
+                metadata_div = article.find('div', recursive=False)
+                author = ''
+                date_raw = ''
                 if metadata_div:
-                    # Buscar autor
                     author_tags = metadata_div.find_all('a')
                     if author_tags:
-                        author = clean_text(author_tags[0].text.strip())
+                        author = clean_text(author_tags[0].text)
                     
-                    # Buscar fecha
                     date_spans = metadata_div.find_all('time')
                     if date_spans:
-                        date = clean_text(date_spans[-1].text.strip())
-                    else:
-                        date = fecha_actual()
+                        date_raw = date_spans[-1].get('datetime') or date_spans[-1].text.strip()
 
-                # Obtener detalles adicionales del artículo
+                datetime_str = normalize_datetime(date_raw)
                 article_details = scrape_article_details(link)
+                final_title = article_details['title'] or list_title
+                article_id = generate_short_id('ElPais', datetime_str, final_title)
 
-                # Agregar los resultados del artículo
-                results.append({
-                    'title': title,
-                    'url': link,
-                    'author': author,
-                    'date': date,
-                    'subtitles': article_details.get('subtitles', ''),
-                    'tags': article_details.get('tags', []),
-                    'newspaper': 'El País'
-                })
+                # 🎯 ORDEN EXACTO con ID PRIMERO
+                ordered_article = create_ordered_article(
+                    newspaper='El País',
+                    article_id=article_id,
+                    date=datetime_str,
+                    tags=article_details['tags'],
+                    title=final_title,
+                    subtitle=article_details['subtitle'],
+                    url=link,
+                    author=author,
+                    image=article_details['image'],
+                    body=article_details['body']
+                )
+                
+                results.append(ordered_article)
 
         return results
 
     except Exception as e:
         return {'error': str(e)}
 
-
 app = Flask(__name__)
 
 @app.route('/scrape', methods=['GET'])
 def scrape():
-    # Obtén la URL como parámetro de la solicitud
     target_url = request.args.get('url')
     if not target_url:
-        return jsonify({'error': 'Se requiere un parámetro "url"'}), 400
-
-    # Llama a la función de scraping
+        return jsonify({'error': 'Se requiere parámetro "url"'}), 400
+    
     data = scrape_all_articles(target_url)
-
-    # Devuelve los resultados en formato JSON
     return jsonify(data)
 
 if __name__ == '__main__':
