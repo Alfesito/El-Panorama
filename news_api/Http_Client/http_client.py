@@ -1,37 +1,21 @@
 import requests
-from random import choice
+from random import uniform
 import time
 
 from .user_agents import get_random_user_agent, mutate_user_agent_prefix
 
+
 class NewsHTTPClient:
-    """Cliente HTTP simple para las peticiones de scraping.
-
-    Uso:
-      client = NewsHTTPClient(timeout=12, delay=0.2)
-      client.get(url)  # usa un User-Agent aleatorio de todo el pool
-      client.get(url, ua_category='mobile')  # fuerza User-Agent móvil
-      client.get(url, headers={'User-Agent': 'Mi-Agente'})  # usa headers específicos
-
-    Nota: si pasas headers explícitos no se sobrescribe el User-Agent salvo que no exista.
-    """
+    """Cliente HTTP simple para las peticiones de scraping."""
 
     def __init__(self, timeout=15, delay=0.5):
         self.timeout = timeout
-        self.delay = delay
+        self.delay = delay  # Máximo 0.5s, pero usamos random(0, 0.5)
 
-    def get(self, url, headers=None, ua_category: str = None, mutate_ua_prefix: bool = False, allow_bots: bool = False, **kwargs):
-        """Realiza una GET con rotación de User-Agent.
+    def get(self, url, headers=None, ua_category: str = None, 
+            mutate_ua_prefix: bool = False, allow_bots: bool = False, **kwargs):
+        """Realiza una GET con rotación de User-Agent."""
 
-        Parámetros:
-          - ua_category: None|'desktop'|'mobile'|'tablet'|'headless' etc. para seleccionar la familia de UA.
-          - mutate_ua_prefix: si True, reemplaza el prefijo (p.ej. 'Mozilla/5.0') por una alternativa aleatoria.
-          - allow_bots: si True, permite usar user-agents de tipo bot (por defecto False).
-          - headers: diccionario de cabeceras; si no incluye 'User-Agent', se añadirá una aleatoria.
-
-        Nota: por seguridad y para evitar bloqueos, las UAs de bots están deshabilitadas
-        por defecto. Si realmente quieres usarlas, establece `allow_bots=True`.
-        """
         if headers is None:
             headers = {}
 
@@ -46,6 +30,7 @@ class NewsHTTPClient:
                 ua = mutate_user_agent_prefix(ua)
             headers['User-Agent'] = ua
 
-        # Respetar pequeño delay entre peticiones para no saturar al origen
-        time.sleep(self.delay)
+        # 🎯 Delay ALEATORIO entre 0 y 0.5 segundos
+        time.sleep(uniform(0, 0.5))
+
         return requests.get(url, headers=headers, timeout=self.timeout, **kwargs)
