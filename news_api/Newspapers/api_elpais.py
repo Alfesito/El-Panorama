@@ -42,11 +42,11 @@ class ElPaisScraper(NewsScraperBase):
                 datetime_str = self.date.normalizedatetime(date_raw)
                 article_details = self.scrape_article_details(link)
                 final_title = article_details.get('title', list_title) or list_title
-                article_id = self.idgen.generateshortid('ElPais', datetime_str, final_title)
+                article_id = self.idgen.generate_id_from_url(link) if link else self.idgen.generateshortid('ElPais', datetime_str, final_title)
                 
                 ordered_article = self.article.create_ordered_article(
                     'El País', article_id, datetime_str, article_details.get('tags', []),
-                    final_title, article_details.get('subtitle', ''), link, author,
+                    final_title, article_details.get('subtitle', ''), link, article_details.get('author', author),
                     article_details.get('image', {'url': '', 'credits': ''}),
                     article_details.get('body', '')
                 )
@@ -64,6 +64,12 @@ class ElPaisScraper(NewsScraperBase):
         subtitle_p = soup.find('p', class_='ast')
         subtitle = self.text.cleantext(subtitle_p) if subtitle_p else ''
         
+        # AUTHOR: extraer de la zona de firma (a_md_a_n) o fallback general
+        author = ''
+        firma_link = soup.select_one('div.a_md_txt div[data-dtm-region="articulo_firma"] a.a_md_a_n') or soup.select_one('a.a_md_a_n')
+        if firma_link:
+            author = self.text.cleantext(firma_link)
+
         # TAGS: section[data-dtm-region="articulo/archivado-en"] li
         tags = []
         archived_section = soup.find('section', {'data-dtm-region': 'articulo_archivado-en'})
@@ -113,6 +119,7 @@ class ElPaisScraper(NewsScraperBase):
         return {
             'title': title,
             'subtitle': subtitle,
+            'author': author,
             'tags': tags,
             'body': body,
             'image': image

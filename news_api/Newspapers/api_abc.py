@@ -38,7 +38,7 @@ class ABCScraper(NewsScraperBase):
             finaltitle = details.get('title', title) or title
             finalauthor = details.get('author', listauthor)
             
-            articleid = self.idgen.generateshortid('ABC', datetimestr, finaltitle)
+            articleid = self.idgen.generate_id_from_url(link) if link else self.idgen.generateshortid('ABC', datetimestr, finaltitle)
             
             orderedarticle = self.article.create_ordered_article(
                 'abc.es', articleid, datetimestr, details.get('tags', []),
@@ -87,7 +87,37 @@ class ABCScraper(NewsScraperBase):
             'img.voc-img[src]',
             'meta[property="og:image"]'
         ])
-        
+
+        # Completar credits: buscar figcaption con texto y autor; fallback a alt del img
+        if not image.get('credits'):
+            caption_text = ''
+            caption_author = ''
+            # buscar figura principal
+            fig = soup.find('figure', class_='voc-img-figure')
+            figcap = None
+            if fig:
+                # figcaption puede ser sibling o descendiente
+                figcap = fig.find_next_sibling('figcaption') or fig.find('figcaption')
+            # si no lo encontramos junto a la figura, buscar cualquier contenedor conocido
+            if not figcap:
+                figcap = soup.find('figcaption', class_='voc-figcaption-container')
+
+            if figcap:
+                text_span = figcap.find('span', class_='voc-figcaption--text')
+                author_span = figcap.find('span', class_='voc-figcaption--author')
+                if text_span:
+                    caption_text = self.text.cleantext(text_span)
+                if author_span:
+                    caption_author = self.text.cleantext(author_span)
+
+            # fallback: usar alt del img si no hay caption
+            if not caption_text:
+                img_elem = soup.select_one('figure.voc-img-figure img.voc-img') or soup.select_one('img.voc-img')
+                if img_elem:
+                    caption_text = (img_elem.get('alt') or '').strip()
+
+            image['credits'] = self.image.format_credits(caption_text, caption_author)
+
         return {
             'title': title, 'subtitle': subtitle, 'author': author,
             'tags': tags, 'body': body, 'image': image

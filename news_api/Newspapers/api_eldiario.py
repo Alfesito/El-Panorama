@@ -39,7 +39,7 @@ class ElDiarioScraper(NewsScraperBase):
             final_title = details.get('title', title) or title
             final_author = details.get('author', author) or author
             
-            article_id = self.idgen.generateshortid('ElDiario', datetime_str, final_title)
+            article_id = self.idgen.generate_id_from_url(link) if link else self.idgen.generateshortid('ElDiario', datetime_str, final_title)
             
             ordered_article = self.article.create_ordered_article(
                 'eldiario.es', article_id, datetime_str, details.get('tags', []),

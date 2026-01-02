@@ -17,15 +17,49 @@ class NewsFlaskApp:
             url = request.args.get('url')
             if not url:
                 return jsonify({'error': f'Requiere parámetro url para {self.name}'}), 400
-            
+
             for domain in self.domains:
                 if domain in url.lower():
-                    return jsonify(self.scraper.scrape_list_page(url))
-            
+                    results = self.scraper.scrape_list_page(url)
+
+                    # Si no hay resultados (posible URL de artículo), intentar obtener detalles directos
+                    if not results:
+                        try:
+                            details = self.scraper.fetch_article_details(url)
+                            # Crear id determinístico a partir de la URL del artículo (MD5 + base62)
+                            date_str = self.scraper.date.normalizedatetime()
+                            article_id = self.scraper.idgen.generate_id_from_url(url)
+                            ordered = self.scraper.article.create_ordered_article(
+                                self.name,
+                                article_id,
+                                date_str,
+                                details.get('tags', []),
+                                details.get('title', ''),
+                                details.get('subtitle', ''),
+                                url,
+                                details.get('author', 'Redacción'),
+                                details.get('image', {'url': '', 'credits': ''}),
+                                details.get('body', '')
+                            )
+                            return jsonify([ordered])
+                        except Exception as e:
+                            return jsonify({'error': 'No se encontraron artículos y falló extracción de detalle', 'message': str(e)}), 500
+
+                    # Enriquecer cada artículo llamando a `enrich_article` (siempre)
+                    enriched = []
+                    for art in results:
+                        try:
+                            enriched.append(self.scraper.enrich_article(art))
+                        except Exception:
+                            enriched.append(art)
+                    return jsonify(enriched)
+
             return jsonify({
                 'error': f'Requiere url {self.name}', 
                 'dominios': self.domains
             }), 400
+
+
         
         @self.app.route('/health', methods=['GET'])
         def health():

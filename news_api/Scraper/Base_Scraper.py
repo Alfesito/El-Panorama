@@ -36,6 +36,56 @@ class NewsScraperBase(ABC):
         """Llama SOLO a método específico de subclase."""
         soup = self.get_page(url)
         return self._scrape_article_details(soup)
+
+    def enrich_article(self, article):
+        """Implementación por defecto para enriquecer un artículo de lista.
+
+        - Si `article` no tiene `url`, devuelve el artículo sin cambios.
+        - Llama a `scrape_article_details` y fusiona los campos relevantes.
+        """
+        if not article or not article.get('url'):
+            return article
+
+        try:
+            details = self.scrape_article_details(article['url'])
+        except Exception:
+            return article
+
+        # Solo sobrescribir campos cuando los detalles contengan valores no vacíos.
+        article['subtitle'] = details.get('subtitle') or article.get('subtitle', '')
+        article['author'] = details.get('author') or article.get('author', 'Redacción')
+        article['title'] = details.get('title') or article.get('title', '')
+        article['tags'] = details.get('tags') or article.get('tags', [])
+        article['body'] = details.get('body') or article.get('body', '')
+
+        # Mezclar imagenes: conservar datos de la tarjeta si detalle no aporta valores
+        existing_image = article.get('image') or {'url': '', 'credits': ''}
+        details_image = details.get('image') or {}
+        merged_image = existing_image.copy()
+        for k, v in details_image.items():
+            if v:  # sólo sobrescribir si el campo no está vacío
+                merged_image[k] = v
+
+        # Normalizar y juntar todos los campos relevantes en `credits`
+        parts = [
+            existing_image.get('credits', ''),
+            existing_image.get('alt', ''),
+            existing_image.get('description', ''),
+            details_image.get('credits', ''),
+            details_image.get('alt', ''),
+            details_image.get('description', '')
+        ]
+        credits = self.image.format_credits(*parts)
+
+        # Devolver solo url y credits
+        final_image = {
+            'url': merged_image.get('url', ''),
+            'credits': credits
+        }
+
+        article['image'] = final_image
+
+        return article
     
     @abstractmethod
     def _scrape_list_articles(self, soup, base_url):

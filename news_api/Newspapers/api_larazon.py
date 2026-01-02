@@ -40,7 +40,7 @@ class LaRazonScraper(NewsScraperBase):
             final_title = details.get('title', title) or title
             final_author = details.get('author', list_author) or list_author
             
-            article_id = self.idgen.generateshortid('LaRazon', datetime_str, final_title)
+            article_id = self.idgen.generate_id_from_url(link) if link else self.idgen.generateshortid('LaRazon', datetime_str, final_title)
             
             ordered_article = self.article.create_ordered_article(
                 'larazon.es', article_id, datetime_str, details.get('tags', []),
@@ -76,16 +76,31 @@ class LaRazonScraper(NewsScraperBase):
             tags = [self.text.cleantext(li.find('a').text.strip()) 
                    for li in tag_list.find_all('li') if li.find('a')][:8]
         
-        # BODY [file:177] div#intext.article-maincontent p
-        body_div = soup.find('div', id='intext')
+        # BODY: múltiples fallbacks para capturar párrafos del artículo
         body_paragraphs = []
-        if body_div and 'article-maincontent' in body_div.get('class', []):
-            body_paragraphs = body_div.find_all('p', class_=re.compile(r'article-main'))[:15]
+        # Buscar contenedor habitual o usar <article>/<main> como fallback
+        body_container = (soup.find('div', id='intext') or
+                          soup.find('div', class_=re.compile(r'article-maincontent|article-main|article-body')) or
+                          soup.find('article') or soup.find('main'))
+        if body_container:
+            # Preferir párrafos dentro del contenedor
+            body_paragraphs = body_container.find_all('p')[:20]
         else:
-            body_paragraphs = soup.find_all('p', class_=re.compile(r'article-main'))[:15]
+            # fallback a cualquier párrafo de la página
+            body_paragraphs = soup.find_all('p')[:20]
         
-        body_texts = [self.text.cleantext(p) for p in body_paragraphs 
-                     if len(self.text.cleantext(p)) > 50 and 'publicidad' not in self.text.cleantext(p).lower()]
+        body_texts = []
+        for p in body_paragraphs:
+            t = self.text.cleantext(p)
+            if not t:
+                continue
+            low = t.lower()
+            if 'publicidad' in low or 'anuncio' in low:
+                continue
+            # aceptar párrafos más cortos (umbral 30) para evitar perder contenidos legítimos
+            if len(t) < 30:
+                continue
+            body_texts.append(t)
         body = ' '.join(body_texts)[:4000]
         
         # IMAGEN: picture img[fotografias-2.larazon.es]
@@ -109,7 +124,7 @@ class LaRazonScraper(NewsScraperBase):
         
         return {
             'title': title,
-            'subtitle': subtitle,  # ✅ h2.article-main__description
+            'subtitle': subtitle,
             'author': author,
             'tags': tags,
             'body': body,
