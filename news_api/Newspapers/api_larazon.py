@@ -50,7 +50,7 @@ class LaRazonScraper(NewsScraperBase):
             )
             results.append(ordered_article)
         
-        return results[:20]
+        return results[:25]
     
     def _scrape_article_details(self, soup):
         """TU CÓDIGO ORIGINAL scrape_article_details_larazon EXACTO"""

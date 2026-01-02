@@ -46,7 +46,7 @@ class VeinteMinutosScraper(NewsScraperBase):
                 details.get('body', '')
             )
             results.append(ordered)
-        return results[:20]
+        return results[:30]
 
     def _scrape_article_details(self, soup):
         # TITLE

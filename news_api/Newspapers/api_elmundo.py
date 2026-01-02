@@ -75,7 +75,7 @@ class ElMundoScraper(NewsScraperBase):
             )
             results.append(article_data)
 
-        return results[:20]
+        return results[:25]
 
     def _scrape_article_details(self, soup):
         """Extrae subtítulo, autor y datos de imagen (url, credits, alt, description).

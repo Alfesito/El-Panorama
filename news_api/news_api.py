@@ -87,8 +87,6 @@ def scrape():
     }), 400
 
 
-
-
 @app.route('/health', methods=['GET'])
 def health():
     return jsonify({

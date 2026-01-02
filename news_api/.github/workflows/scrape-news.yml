@@ -1,0 +1,33 @@
+name: 📰 Scrape Noticias 30min
+
+on:
+  schedule:
+    - cron: '*/30 * * * *'  # Cada 30 minutos
+  workflow_dispatch:  # Botón manual en GitHub
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      run: |
+        pip install flask beautifulsoup4 requests duckdb lxml unidecode
+        # Añade pip install -r requirements.txt si tienes
+    
+    - name: Run scrapers → JSON
+      run: python scraper_cron.py  # Script modificado abajo
+    
+    - name: Commit JSON results
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add noticias_completas.json
+        git diff --staged --quiet || git commit -m "📰 Update noticias $(date +%Y-%m-%d_%H:%M)"
+        git push

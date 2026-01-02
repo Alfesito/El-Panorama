@@ -9,7 +9,7 @@ class LaVozDeGaliciaScraper(NewsScraperBase):
     def _scrape_list_articles(self, soup, base_url):
         results = []
         main = soup.find('main') or soup
-        articles = main.find_all('article')[:30]
+        articles = main.find_all('article')[:25]
         for article in articles:
             title_tag = article.find(['h2', 'h3', 'h1'])
             a_tag = title_tag.find('a') if title_tag else article.find('a')
@@ -46,7 +46,7 @@ class LaVozDeGaliciaScraper(NewsScraperBase):
                 details.get('body', '')
             )
             results.append(ordered)
-        return results[:20]
+        return results[:25]
 
     def _scrape_article_details(self, soup):
         # TITLE

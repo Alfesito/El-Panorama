@@ -1,3 +1,4 @@
+from Flask_App.Flask_App import NewsFlaskApp
 from Scraper.Base_Scraper import NewsScraperBase
 import re
 
@@ -8,7 +9,7 @@ class ElDiarioScraper(NewsScraperBase):
     def _scrape_list_articles(self, soup, base_url):
         """TU CÓDIGO ORIGINAL scrape_all_articles EXACTO"""
         results = []
-        articles = soup.find_all('figure', class_='ni-figure')[:20]
+        articles = soup.find_all('figure', class_='ni-figure')[:25]
         
         for article in articles:
             title_a = article.find('a')

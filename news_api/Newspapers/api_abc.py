@@ -47,7 +47,7 @@ class ABCScraper(NewsScraperBase):
                 details.get('body', '')
             )
             results.append(orderedarticle)
-        return results[:20]
+        return results[:25]
     
     def _scrape_article_details(self, soup):
         # TITLE - Manejo None
