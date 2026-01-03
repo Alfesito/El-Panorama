@@ -1,5 +1,6 @@
 const CONFIG = {
-    server_url: "https://raw.githubusercontent.com/Alfesito/ES-News-Topics/refs/heads/main/noticias_completas.json",
+    news_url: "https://raw.githubusercontent.com/Alfesito/ES-News-Topics/refs/heads/main/noticias_completas.json",
+    trends_url: "https://raw.githubusercontent.com/Alfesito/ES-News-Topics/main/trends_google%26x.json",
     use_server: true,
     json_file: ''
   }

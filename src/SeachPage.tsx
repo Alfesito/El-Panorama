@@ -74,7 +74,7 @@ export default function SearchPage({ items }: SearchPageProps) {
               <input
                 id="filtro"
                 type="text"
-                placeholder="Busca un artículo"
+                placeholder="Busca tema"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
               />
