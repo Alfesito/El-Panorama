@@ -1,6 +1,6 @@
 const CONFIG = {
-    server_url: "https://dummyjson.com/products",
-    use_server: false,
+    server_url: "https://raw.githubusercontent.com/Alfesito/ES-News-Topics/refs/heads/main/noticias_completas.json",
+    use_server: true,
     json_file: ''
   }
   
