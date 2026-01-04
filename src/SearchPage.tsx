@@ -39,12 +39,14 @@ export default function SearchPage({ items, trends }: SearchPageProps) {
       .trim();
   };
 
-  // MODIFICADO: Ahora acepta un parámetro opcional para buscar directamente
   const filterByQuery = (searchQuery?: string) => {
     const queryToUse = searchQuery !== undefined ? searchQuery : query;
     
+    console.log('🔍 Buscando con query:', queryToUse); // DEBUG
+    
     if (!queryToUse.trim()) {
-      setFinaldata(items);
+      console.log('⚠️ Query vacía, mostrando todos los items');
+      setFinaldata([...items]); // Crear nueva referencia del array
       return;
     }
 
@@ -54,6 +56,8 @@ export default function SearchPage({ items, trends }: SearchPageProps) {
     // Stopwords en español (palabras a ignorar)
     const stopwords = new Set(['el', 'la', 'los', 'las', 'de', 'del', 'y', 'en', 'un', 'una', 'es', 'por', 'con', 'para', 'al', 'a']);
     const filteredSearchWords = searchWords.filter(word => !stopwords.has(word) && word.length > 2);
+
+    console.log('📝 Palabras filtradas para buscar:', filteredSearchWords);
 
     const filtered = items.filter((item) => {
       // Normalizar todos los campos
@@ -85,7 +89,9 @@ export default function SearchPage({ items, trends }: SearchPageProps) {
       // Método 3: Al menos 70% de palabras clave presentes en título + subtítulos
       const combinedText = `${titleNorm} ${subtitlesNorm}`;
       const matchedWords = filteredSearchWords.filter(word => combinedText.includes(word));
-      const matchRatio = matchedWords.length / filteredSearchWords.length;
+      const matchRatio = filteredSearchWords.length > 0 
+        ? matchedWords.length / filteredSearchWords.length 
+        : 0;
 
       if (matchRatio >= 0.7) {
         if (!uniqueTitles.has(item.title)) {
@@ -98,14 +104,17 @@ export default function SearchPage({ items, trends }: SearchPageProps) {
     });
 
     console.log('✅ Resultados encontrados:', filtered.length);
-    setFinaldata(filtered);
+    setFinaldata([...filtered]); // Crear nueva referencia del array
   };
 
-  // MODIFICADO: Manejador simplificado para clicks en trends
+  // Manejador para clicks en trends
   const handleTrendClick = (trendTitle: string) => {
     console.log('👆 Click en trend:', trendTitle);
-    setQuery(trendTitle); // Actualiza el input visual
-    filterByQuery(trendTitle); // Filtra inmediatamente con el texto del trend
+    setQuery(trendTitle);
+    // Usar setTimeout para asegurar que el estado se actualice
+    setTimeout(() => {
+      filterByQuery(trendTitle);
+    }, 0);
   };
 
   return selectedUrl ? (
@@ -126,8 +135,11 @@ export default function SearchPage({ items, trends }: SearchPageProps) {
                   placeholder="Busca tema"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  onKeyPress={(e) => {
-                    if (e.key === 'Enter') filterByQuery();
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      filterByQuery();
+                    }
                   }}
                 />
               </div>
@@ -147,7 +159,7 @@ export default function SearchPage({ items, trends }: SearchPageProps) {
               </p>
               <ul id="resultados">
                 {finaldata.map((item, index) => (
-                  <li key={index} className="result-item">
+                  <li key={`${item.url}-${index}`} className="result-item">
                     <div className="unproducto">
                       <h3>{item.title}</h3>
                       <p>{item.subtitles}</p>
