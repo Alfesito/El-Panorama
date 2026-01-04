@@ -7,42 +7,28 @@ type WebViewPageProps = {
 };
 
 const WebViewPage: React.FC<WebViewPageProps> = ({ url, onBack }) => {
+  const [iframeError, setIframeError] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [blocked, setBlocked] = useState(false);
 
   useEffect(() => {
+    setLoading(true);
+    setIframeError(false);
+    
     const timer = setTimeout(() => {
       setLoading(false);
-    }, 3000);
+    }, 100);
 
-    const iframe = document.querySelector('iframe');
-    if (iframe) {
-      iframe.addEventListener('error', () => {
-        setBlocked(true);
-        setLoading(false);
-      });
-    }
-
-    const checkBlocked = setTimeout(() => {
-      try {
-        const frame = document.querySelector('iframe') as HTMLIFrameElement;
-        if (frame && !frame.contentWindow?.location.href) {
-          setBlocked(true);
-        }
-      } catch (e) {
-        setBlocked(true);
-      }
-      setLoading(false);
-    }, 4000);
-
-    return () => {
-      clearTimeout(timer);
-      clearTimeout(checkBlocked);
-    };
+    return () => clearTimeout(timer);
   }, [url]);
 
   const handleOpenExternal = () => {
     window.open(url, '_blank', 'noopener,noreferrer');
+    onBack();
+  };
+
+  const handleIframeError = () => {
+    setIframeError(true);
+    setLoading(false);
   };
 
   return (
@@ -51,9 +37,8 @@ const WebViewPage: React.FC<WebViewPageProps> = ({ url, onBack }) => {
         <button className="back-button" onClick={onBack}>
           ← Volver
         </button>
-        <span className="webview-url">{new URL(url).hostname}</span>
         <button className="external-button" onClick={handleOpenExternal}>
-          Abrir en pestaña ↗
+          Abrir en nueva pestaña ↗
         </button>
       </div>
 
@@ -64,32 +49,28 @@ const WebViewPage: React.FC<WebViewPageProps> = ({ url, onBack }) => {
         </div>
       )}
 
-      {blocked && !loading && (
-        <div className="webview-blocked">
-          <div className="blocked-content">
-            <h3>🔒 Contenido bloqueado</h3>
-            <p>
-              Este periódico no permite visualización dentro de otras webs por
-              políticas de seguridad.
-            </p>
-            <button className="open-external-btn" onClick={handleOpenExternal}>
-              📰 Abrir en nueva pestaña
+      {iframeError ? (
+        <div className="webview-error">
+          <div className="error-content">
+            <h3>⚠️ No se puede mostrar esta página</h3>
+            <p>Algunos periódicos bloquean la visualización dentro de otras webs por seguridad.</p>
+            <button className="external-button-large" onClick={handleOpenExternal}>
+              📰 Abrir noticia en nueva pestaña
             </button>
-            <button className="back-btn-secondary" onClick={onBack}>
+            <button className="back-button-secondary" onClick={onBack}>
               Volver a las noticias
             </button>
           </div>
         </div>
+      ) : (
+        <iframe
+          src={url}
+          title="Noticia"
+          className="webview-iframe"
+          onError={handleIframeError}
+          sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
+        />
       )}
-
-      <iframe
-        src={url}
-        title="Noticia"
-        className={`webview-iframe ${loading ? 'loading' : ''} ${blocked ? 'hidden' : ''}`}
-        sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-top-navigation"
-        referrerPolicy="no-referrer-when-downgrade"
-        onLoad={() => setLoading(false)}
-      />
     </div>
   );
 };
