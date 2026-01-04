@@ -30,6 +30,41 @@ export default function SearchPage({ items, trends }: SearchPageProps) {
   const [finaldata, setFinaldata] = useState<Item[]>(items);
   const [selectedUrl, setSelectedUrl] = useState<string | null>(null);
 
+  // Función para formatear fecha relativa
+  const formatRelativeTime = (dateString: string): string => {
+    try {
+      const date = new Date(dateString);
+      const now = new Date();
+      const diffInMs = now.getTime() - date.getTime();
+      const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
+      const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
+      const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+
+      if (diffInMinutes < 1) {
+        return 'Hace menos de 1 minuto';
+      } else if (diffInMinutes < 60) {
+        return `Hace ${diffInMinutes} minuto${diffInMinutes !== 1 ? 's' : ''}`;
+      } else if (diffInHours < 24) {
+        return `Hace ${diffInHours} hora${diffInHours !== 1 ? 's' : ''}`;
+      } else if (diffInDays === 1) {
+        return 'Hace 1 día';
+      } else if (diffInDays < 7) {
+        return `Hace ${diffInDays} días`;
+      } else if (diffInDays < 30) {
+        const weeks = Math.floor(diffInDays / 7);
+        return `Hace ${weeks} semana${weeks !== 1 ? 's' : ''}`;
+      } else if (diffInDays < 365) {
+        const months = Math.floor(diffInDays / 30);
+        return `Hace ${months} mes${months !== 1 ? 'es' : ''}`;
+      } else {
+        const years = Math.floor(diffInDays / 365);
+        return `Hace ${years} año${years !== 1 ? 's' : ''}`;
+      }
+    } catch (error) {
+      return dateString; // Si hay error, devuelve la fecha original
+    }
+  };
+
   const filterByQuery = () => {
     const searchWords = query.toLowerCase().trim().split(/\s+/);
     const uniqueTitles = new Set<string>();
@@ -91,7 +126,6 @@ export default function SearchPage({ items, trends }: SearchPageProps) {
                 <input
                   type="text"
                   className="search-input"
-                  placeholder="Venezuela"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   onKeyDown={(e) => {
@@ -116,7 +150,7 @@ export default function SearchPage({ items, trends }: SearchPageProps) {
                   <h3 className="news-title">{item.title}</h3>
                   
                   <div className="tags-row">
-                    {item.tags.slice(0, 3).map((tag, idx) => (
+                    {item.tags.slice().map((tag, idx) => (
                       <span key={idx} className="tag-pill">{tag}</span>
                     ))}
                   </div>
@@ -129,7 +163,7 @@ export default function SearchPage({ items, trends }: SearchPageProps) {
                   </button>
                   
                   <div className="news-meta">
-                    <span>De <strong>{item.author}</strong> · A las <strong>{item.date}</strong></span>
+                    <span>De <strong>{item.author}</strong> · {formatRelativeTime(item.date)}</span>
                   </div>
                   
                   <div className="news-source">
