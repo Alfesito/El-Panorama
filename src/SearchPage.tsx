@@ -113,7 +113,7 @@ export default function SearchPage({ items, trends }: SearchPageProps) {
             <div className="panorama-section">
               <div className="header-content">
                 <span className="logo-icon">📰</span>
-                <h1>El Panorama</h1>
+                <header><h1>El Panorama</h1></header>
               </div>
             </div>
 
