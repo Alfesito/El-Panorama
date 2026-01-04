@@ -2,20 +2,17 @@
   width: 100%;
 }
 
-/* Layout principal: 2 columnas (búsqueda+resultados | trends) */
 .main-layout {
   display: flex;
   gap: 2rem;
   align-items: flex-start;
 }
 
-/* Columna izquierda: búsqueda + resultados */
 .left-column {
   flex: 1;
   min-width: 0;
 }
 
-/* Buscador horizontal */
 .buscador {
   margin-bottom: 2rem;
 }
@@ -87,7 +84,6 @@
   outline: none;
 }
 
-/* Resultados */
 .resultados-section {
   width: 100%;
 }
@@ -159,18 +155,18 @@
   box-shadow: 0 6px 20px rgba(40,167,69,0.4);
 }
 
-/* Sidebar Trends PEQUEÑO (sticky desde arriba) */
 .trends-sidebar {
   width: 280px;
   flex-shrink: 0;
   background: linear-gradient(145deg, #f8f9fa, #e9ecef);
-  padding: 1.5rem;
+  padding: 1.5rem 1rem 1.5rem 1.5rem;
   border-radius: 16px;
   border: 1px solid #dee2e6;
   height: fit-content;
   position: sticky;
   top: 20px;
   box-shadow: 0 8px 32px rgba(0,0,0,0.08);
+  overflow: hidden;
 }
 
 .trends-sidebar h4 {
@@ -186,8 +182,10 @@
 .trends-list {
   max-height: 520px;
   overflow-y: auto;
+  overflow-x: hidden;
   scrollbar-width: thin;
   scrollbar-color: #adb5bd #f1f3f4;
+  padding-right: 0.5rem;
 }
 
 .trends-list::-webkit-scrollbar {
@@ -205,46 +203,46 @@
 }
 
 .trend-item {
-  padding: 0.65rem 0.75rem;  /* ✅ Más compacto: de 0.875rem → 0.65rem */
-  margin-bottom: 0.6rem;  /* ✅ Menos espacio entre items */
+  padding: 0.65rem 0.75rem;
+  margin-bottom: 0.6rem;
   background: rgba(255,255,255,0.9);
-  border-radius: 8px;  /* ✅ Bordes más pequeños */
+  border-radius: 8px;
   cursor: pointer;
-  border-left: 3px solid #007bff;  /* ✅ Borde más delgado */
-  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-  font-size: 0.85rem;  /* ✅ Texto más pequeño: de 0.9rem → 0.85rem */
+  border-left: 3px solid #007bff;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-size: 0.85rem;
   line-height: 1.35;
   box-shadow: 0 1px 4px rgba(0,0,0,0.05);
 }
 
 .trend-item:hover {
-  transform: translateX(8px) scale(1.015);
-  box-shadow: 0 8px 24px rgba(0,123,255,0.18);
-  background: linear-gradient(135deg, rgba(227,242,253,0.9), rgba(187,222,251,0.9));
+  transform: translateX(4px) scale(1.015);
+  box-shadow: 0 6px 20px rgba(0,123,255,0.16);
+  background: linear-gradient(135deg, rgba(227,242,253,0.95), rgba(187,222,251,0.95));
   border-left-color: #0056b3;
+  border-left-width: 4px;
 }
 
 .trend-item:active {
-  transform: translateX(6px) scale(0.99);
+  transform: translateX(2px) scale(0.99);
 }
 
 .trend-item strong {
   display: block;
   color: #1a1a1a;
   font-weight: 700;
-  font-size: 0.9rem;  /* ✅ Título más pequeño: de 1rem → 0.9rem */
+  font-size: 0.9rem;
   margin-bottom: 0.2rem;
 }
 
 .trend-item small {
   color: #6c757d;
-  font-size: 0.75rem;  /* ✅ Metadata más pequeño: de 0.8rem → 0.75rem */
+  font-size: 0.75rem;
   display: block;
   font-weight: 500;
   line-height: 1.3;
 }
 
-/* 🌙 DARK MODE */
 @media (prefers-color-scheme: dark) {
   #filtro, #selector {
     background: #2a2a2a;
@@ -305,7 +303,6 @@
   }
 }
 
-/* Responsive */
 @media (max-width: 1200px) {
   .trends-sidebar {
     width: 260px;
