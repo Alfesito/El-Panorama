@@ -14,21 +14,48 @@ const WebViewPage: React.FC<WebViewPageProps> = ({ url, onBack }) => {
     setLoading(true);
     setIframeError(false);
     
-    const timer = setTimeout(() => {
+    const loadingTimer = setTimeout(() => {
       setLoading(false);
-    }, 100);
+    }, 2000);
 
-    return () => clearTimeout(timer);
+    const checkTimer = setTimeout(() => {
+      const iframe = document.querySelector('.webview-iframe') as HTMLIFrameElement;
+      if (iframe) {
+        try {
+          const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+          if (!iframeDoc || iframeDoc.body?.innerHTML === '') {
+            setIframeError(true);
+          }
+        } catch (e) {
+          setIframeError(true);
+        }
+      }
+      setLoading(false);
+    }, 3000);
+
+    return () => {
+      clearTimeout(loadingTimer);
+      clearTimeout(checkTimer);
+    };
   }, [url]);
 
   const handleOpenExternal = () => {
     window.open(url, '_blank', 'noopener,noreferrer');
-    onBack();
   };
 
-  const handleIframeError = () => {
-    setIframeError(true);
+  const handleIframeLoad = () => {
     setLoading(false);
+    const iframe = document.querySelector('.webview-iframe') as HTMLIFrameElement;
+    if (iframe) {
+      try {
+        const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+        if (!iframeDoc || iframeDoc.body?.innerHTML === '') {
+          setIframeError(true);
+        }
+      } catch (e) {
+        setIframeError(true);
+      }
+    }
   };
 
   return (
@@ -42,7 +69,7 @@ const WebViewPage: React.FC<WebViewPageProps> = ({ url, onBack }) => {
         </button>
       </div>
 
-      {loading && (
+      {loading && !iframeError && (
         <div className="webview-loading">
           <div className="spinner"></div>
           <p>Cargando noticia...</p>
@@ -53,7 +80,7 @@ const WebViewPage: React.FC<WebViewPageProps> = ({ url, onBack }) => {
         <div className="webview-error">
           <div className="error-content">
             <h3>⚠️ No se puede mostrar esta página</h3>
-            <p>Algunos periódicos bloquean la visualización dentro de otras webs por seguridad.</p>
+            <p>Este periódico bloquea la visualización dentro de otras webs por copyright.</p>
             <button className="external-button-large" onClick={handleOpenExternal}>
               📰 Abrir noticia en nueva pestaña
             </button>
@@ -67,8 +94,8 @@ const WebViewPage: React.FC<WebViewPageProps> = ({ url, onBack }) => {
           src={url}
           title="Noticia"
           className="webview-iframe"
-          onError={handleIframeError}
-          sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
+          onLoad={handleIframeLoad}
+          sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-top-navigation"
         />
       )}
     </div>
