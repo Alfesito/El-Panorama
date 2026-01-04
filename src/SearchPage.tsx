@@ -173,10 +173,6 @@ export default function SearchPage({ items, trends }: SearchPageProps) {
                 title={`Filtrar por "${trend.title}"`}
               >
                 <strong>{trend.title}</strong>
-                <br />
-                <small>
-                  {trend.source} • {trend.volume}
-                </small>
               </div>
             ))}
           </div>
