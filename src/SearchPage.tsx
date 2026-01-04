@@ -30,91 +30,63 @@ export default function SearchPage({ items, trends }: SearchPageProps) {
   const [finaldata, setFinaldata] = useState<Item[]>(items);
   const [selectedUrl, setSelectedUrl] = useState<string | null>(null);
 
-  // Función para normalizar texto (quitar tildes, ñ -> n, etc.)
-  const normalizeText = (text: string): string => {
-    return text
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .toLowerCase()
-      .trim();
+  const getUniqueTags = (arr: Item[]): string[] => {
+    const allTags = arr.flatMap((item) => item.tags);
+    return Array.from(new Set(allTags));
   };
 
-  const filterByQuery = (searchQuery?: string) => {
-    const queryToUse = searchQuery !== undefined ? searchQuery : query;
-    
-    console.log('🔍 Buscando con query:', queryToUse); // DEBUG
-    
-    if (!queryToUse.trim()) {
-      console.log('⚠️ Query vacía, mostrando todos los items');
-      setFinaldata([...items]); // Crear nueva referencia del array
-      return;
-    }
+  const tags = getUniqueTags(items);
 
-    const searchWords = normalizeText(queryToUse).split(/\s+/);
+  const filterByQuery = () => {
+    const searchWords = query.toLowerCase().trim().split(/\s+/);
     const uniqueTitles = new Set<string>();
-
-    // Stopwords en español (palabras a ignorar)
-    const stopwords = new Set(['el', 'la', 'los', 'las', 'de', 'del', 'y', 'en', 'un', 'una', 'es', 'por', 'con', 'para', 'al', 'a']);
-    const filteredSearchWords = searchWords.filter(word => !stopwords.has(word) && word.length > 2);
-
-    console.log('📝 Palabras filtradas para buscar:', filteredSearchWords);
-
     const filtered = items.filter((item) => {
-      // Normalizar todos los campos
-      const titleNorm = normalizeText(item.title);
-      const subtitlesNorm = normalizeText(item.subtitles);
-      const tagsNorm = item.tags.map(tag => normalizeText(tag));
-
-      // Método 1: Match exacto en título (alta prioridad)
-      if (filteredSearchWords.every(word => titleNorm.includes(word))) {
-        if (!uniqueTitles.has(item.title)) {
-          uniqueTitles.add(item.title);
-          return true;
-        }
-        return false;
+      const wordsInItem = [item.title, item.subtitles, ...item.tags]
+        .join(' ')
+        .toLowerCase()
+        .split(/\s+/);
+      const matches = searchWords.every((word) => wordsInItem.includes(word));
+      if (matches && !uniqueTitles.has(item.title)) {
+        uniqueTitles.add(item.title);
+        return true;
       }
-
-      // Método 2: Match exacto en tags
-      const matchInTags = filteredSearchWords.some(word => 
-        tagsNorm.some(tag => tag === word || tag.includes(word))
-      );
-      if (matchInTags && filteredSearchWords.length <= 2) {
-        if (!uniqueTitles.has(item.title)) {
-          uniqueTitles.add(item.title);
-          return true;
-        }
-        return false;
-      }
-
-      // Método 3: Al menos 70% de palabras clave presentes en título + subtítulos
-      const combinedText = `${titleNorm} ${subtitlesNorm}`;
-      const matchedWords = filteredSearchWords.filter(word => combinedText.includes(word));
-      const matchRatio = filteredSearchWords.length > 0 
-        ? matchedWords.length / filteredSearchWords.length 
-        : 0;
-
-      if (matchRatio >= 0.7) {
-        if (!uniqueTitles.has(item.title)) {
-          uniqueTitles.add(item.title);
-          return true;
-        }
-      }
-
       return false;
     });
-
-    console.log('✅ Resultados encontrados:', filtered.length);
-    setFinaldata([...filtered]); // Crear nueva referencia del array
+    setFinaldata(filtered);
   };
 
-  // Manejador para clicks en trends
-  const handleTrendClick = (trendTitle: string) => {
-    console.log('👆 Click en trend:', trendTitle);
+  const filterByTag = (selectedTag: string) => {
+    const uniqueTitles = new Set<string>();
+    if (selectedTag === 'All') {
+      setFinaldata(items);
+    } else {
+      const filtered = items.filter((item) => {
+        const matches = item.tags.includes(selectedTag);
+        if (matches && !uniqueTitles.has(item.title)) {
+          uniqueTitles.add(item.title);
+          return true;
+        }
+        return false;
+      });
+      setFinaldata(filtered);
+    }
+    setQuery('');
+  };
+
+  const filterByTrend = (trendTitle: string) => {
+    const uniqueTitles = new Set<string>();
+    const filtered = items.filter((item) => {
+      const searchText = trendTitle.toLowerCase();
+      const itemText = [item.title, item.subtitles, ...item.tags].join(' ').toLowerCase();
+      const matches = itemText.includes(searchText);
+      if (matches && !uniqueTitles.has(item.title)) {
+        uniqueTitles.add(item.title);
+        return true;
+      }
+      return false;
+    });
+    setFinaldata(filtered);
     setQuery(trendTitle);
-    // Usar setTimeout para asegurar que el estado se actualice
-    setTimeout(() => {
-      filterByQuery(trendTitle);
-    }, 0);
   };
 
   return selectedUrl ? (
@@ -135,18 +107,26 @@ export default function SearchPage({ items, trends }: SearchPageProps) {
                   placeholder="Busca tema"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      filterByQuery();
-                    }
-                  }}
                 />
               </div>
               <div className="col">
-                <button id="buscador" onClick={() => filterByQuery()}>
+                <button id="buscador" onClick={filterByQuery}>
                   Buscar
                 </button>
+              </div>
+              <div className="col">
+                <select
+                  id="selector"
+                  defaultValue="All"
+                  onChange={(e) => filterByTag(e.target.value)}
+                >
+                  <option value="All">Todos</option>
+                  {tags.slice(0, 10).map((tag, index) => (
+                    <option key={index} value={tag}>
+                      {tag}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
           </div>
@@ -154,20 +134,12 @@ export default function SearchPage({ items, trends }: SearchPageProps) {
           {/* Resultados */}
           <div className="resultados-section">
             <div id="productosresultados">
-              <p className="results-count">
-                {finaldata.length} resultado{finaldata.length !== 1 ? 's' : ''} encontrado{finaldata.length !== 1 ? 's' : ''}
-              </p>
               <ul id="resultados">
                 {finaldata.map((item, index) => (
-                  <li key={`${item.url}-${index}`} className="result-item">
+                  <li key={index} className="result-item">
                     <div className="unproducto">
                       <h3>{item.title}</h3>
                       <p>{item.subtitles}</p>
-                      <div className="tags-container">
-                        {item.tags.slice(0, 3).map((tag, idx) => (
-                          <span key={idx} className="tag-badge">{tag}</span>
-                        ))}
-                      </div>
                       <button
                         onClick={() => setSelectedUrl(item.url)}
                         className="view-button"
@@ -175,8 +147,8 @@ export default function SearchPage({ items, trends }: SearchPageProps) {
                         Leer más
                       </button>
                       <p>
-                        De <strong>{item.author}</strong>  ·{' '}
-                        A las <strong>{item.date}</strong>
+                        <strong>Autor:</strong> {item.author} |{' '}
+                        <strong>Fecha:</strong> {item.date}
                       </p>
                       <p>
                         <strong>{item.newspaper}</strong>
@@ -193,12 +165,11 @@ export default function SearchPage({ items, trends }: SearchPageProps) {
         <aside className="trends-sidebar">
           <h4>🔥 Trends populares</h4>
           <div className="trends-list">
-            {trends?.slice(0, 25).map((trend) => (
+            {trends?.slice(0, 15).map((trend) => (
               <div
                 key={trend.id}
                 className="trend-item"
-                onClick={() => handleTrendClick(trend.title)}
-                style={{ cursor: 'pointer' }}
+                onClick={() => filterByTrend(trend.title)}
                 title={`Filtrar por "${trend.title}"`}
               >
                 <strong>{trend.title}</strong>
