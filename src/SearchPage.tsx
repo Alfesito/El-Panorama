@@ -30,13 +30,6 @@ export default function SearchPage({ items, trends }: SearchPageProps) {
   const [finaldata, setFinaldata] = useState<Item[]>(items);
   const [selectedUrl, setSelectedUrl] = useState<string | null>(null);
 
-  const getUniqueTags = (arr: Item[]): string[] => {
-    const allTags = arr.flatMap((item) => item.tags);
-    return Array.from(new Set(allTags));
-  };
-
-  const tags = getUniqueTags(items);
-
   const filterByQuery = () => {
     const searchWords = query.toLowerCase().trim().split(/\s+/);
     const uniqueTitles = new Set<string>();
@@ -53,24 +46,6 @@ export default function SearchPage({ items, trends }: SearchPageProps) {
       return false;
     });
     setFinaldata(filtered);
-  };
-
-  const filterByTag = (selectedTag: string) => {
-    const uniqueTitles = new Set<string>();
-    if (selectedTag === 'All') {
-      setFinaldata(items);
-    } else {
-      const filtered = items.filter((item) => {
-        const matches = item.tags.includes(selectedTag);
-        if (matches && !uniqueTitles.has(item.title)) {
-          uniqueTitles.add(item.title);
-          return true;
-        }
-        return false;
-      });
-      setFinaldata(filtered);
-    }
-    setQuery('');
   };
 
   const filterByTrend = (trendTitle: string) => {
