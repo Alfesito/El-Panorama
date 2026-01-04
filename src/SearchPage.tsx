@@ -2,7 +2,6 @@ import { useState } from 'react';
 import './SearchPage.css';
 import WebViewPage from './WebViewPage';
 
-
 type Item = {
   author: string;
   date: string;
@@ -13,7 +12,6 @@ type Item = {
   newspaper: string;
 };
 
-
 type TrendsItem = {
   id: number;
   title: string;
@@ -22,12 +20,10 @@ type TrendsItem = {
   timeframe: string;
 };
 
-
 type SearchPageProps = {
   items: Item[];
   trends?: TrendsItem[];
 };
-
 
 export default function SearchPage({ items, trends }: SearchPageProps) {
   const [query, setQuery] = useState('');
@@ -43,46 +39,16 @@ export default function SearchPage({ items, trends }: SearchPageProps) {
       .trim();
   };
 
-  // Calcular similitud entre dos strings (0 a 1)
-  const calculateSimilarity = (str1: string, str2: string): number => {
-    const longer = str1.length > str2.length ? str1 : str2;
-    const shorter = str1.length > str2.length ? str2 : str1;
-
-    if (longer.length === 0) return 1.0;
-
-    const editDistance = getEditDistance(longer, shorter);
-    return (longer.length - editDistance) / longer.length;
-  };
-
-  // Distancia de Levenshtein (para similitud)
-  const getEditDistance = (s1: string, s2: string): number => {
-    const costs: number[] = [];
-    for (let i = 0; i <= s1.length; i++) {
-      let lastValue = i;
-      for (let j = 0; j <= s2.length; j++) {
-        if (i === 0) {
-          costs[j] = j;
-        } else if (j > 0) {
-          let newValue = costs[j - 1];
-          if (s1.charAt(i - 1) !== s2.charAt(j - 1)) {
-            newValue = Math.min(Math.min(newValue, lastValue), costs[j]) + 1;
-          }
-          costs[j - 1] = lastValue;
-          lastValue = newValue;
-        }
-      }
-      if (i > 0) costs[s2.length] = lastValue;
-    }
-    return costs[s2.length];
-  };
-
-  const filterByQuery = () => {
-    if (!query.trim()) {
+  // MODIFICADO: Ahora acepta un parámetro opcional para buscar directamente
+  const filterByQuery = (searchQuery?: string) => {
+    const queryToUse = searchQuery !== undefined ? searchQuery : query;
+    
+    if (!queryToUse.trim()) {
       setFinaldata(items);
       return;
     }
 
-    const searchWords = normalizeText(query).split(/\s+/);
+    const searchWords = normalizeText(queryToUse).split(/\s+/);
     const uniqueTitles = new Set<string>();
 
     // Stopwords en español (palabras a ignorar)
@@ -131,72 +97,15 @@ export default function SearchPage({ items, trends }: SearchPageProps) {
       return false;
     });
 
+    console.log('✅ Resultados encontrados:', filtered.length);
     setFinaldata(filtered);
   };
 
-  const filterByTrend = (trendTitle: string) => {
-    console.log('🔍 Filtrando por trend:', trendTitle); // DEBUG
-
-    const trendNormalized = normalizeText(trendTitle);
-    const trendWords = trendNormalized.split(/\s+/).filter(w => w.length > 2);
-    const uniqueTitles = new Set<string>();
-
-    // Stopwords en español
-    const stopwords = new Set(['el', 'la', 'los', 'las', 'de', 'del', 'y', 'en', 'un', 'una', 'es', 'por', 'con', 'para', 'al']);
-    const filteredTrendWords = trendWords.filter(word => !stopwords.has(word));
-
-    console.log('📝 Palabras filtradas:', filteredTrendWords); // DEBUG
-
-    const filtered = items.filter((item) => {
-      const titleNorm = normalizeText(item.title);
-      const subtitlesNorm = normalizeText(item.subtitles);
-      const tagsNorm = item.tags.map(tag => normalizeText(tag));
-
-      // Método 1: Similitud alta en título (>70%)
-      const titleSimilarity = calculateSimilarity(trendNormalized, titleNorm);
-      if (titleSimilarity > 0.7) {
-        if (!uniqueTitles.has(item.title)) {
-          uniqueTitles.add(item.title);
-          return true;
-        }
-        return false;
-      }
-
-      // Método 2: Match exacto en tags
-      if (tagsNorm.some(tag => tag === trendNormalized || tag.includes(trendNormalized))) {
-        if (!uniqueTitles.has(item.title)) {
-          uniqueTitles.add(item.title);
-          return true;
-        }
-        return false;
-      }
-
-      // Método 3: Al menos 60% de palabras del trend en título/subtítulos
-      const combinedText = `${titleNorm} ${subtitlesNorm}`;
-      const matchedWords = filteredTrendWords.filter(word => combinedText.includes(word));
-      const matchRatio = filteredTrendWords.length > 0 
-        ? matchedWords.length / filteredTrendWords.length 
-        : 0;
-
-      if (matchRatio >= 0.6 && filteredTrendWords.length > 0) {
-        if (!uniqueTitles.has(item.title)) {
-          uniqueTitles.add(item.title);
-          return true;
-        }
-      }
-
-      return false;
-    });
-
-    console.log('✅ Resultados encontrados:', filtered.length); // DEBUG
-    setFinaldata(filtered);
-    setQuery(trendTitle);
-  };
-
-  // AGREGADO: Manejador de click separado
+  // MODIFICADO: Manejador simplificado para clicks en trends
   const handleTrendClick = (trendTitle: string) => {
-    console.log('👆 Click en trend:', trendTitle); // DEBUG
-    filterByTrend(trendTitle);
+    console.log('👆 Click en trend:', trendTitle);
+    setQuery(trendTitle); // Actualiza el input visual
+    filterByQuery(trendTitle); // Filtra inmediatamente con el texto del trend
   };
 
   return selectedUrl ? (
@@ -223,7 +132,7 @@ export default function SearchPage({ items, trends }: SearchPageProps) {
                 />
               </div>
               <div className="col">
-                <button id="buscador" onClick={filterByQuery}>
+                <button id="buscador" onClick={() => filterByQuery()}>
                   Buscar
                 </button>
               </div>
@@ -281,7 +190,6 @@ export default function SearchPage({ items, trends }: SearchPageProps) {
                 title={`Filtrar por "${trend.title}"`}
               >
                 <strong>{trend.title}</strong>
-                <span className="trend-volume">{trend.volume}</span>
               </div>
             ))}
           </div>
