@@ -68,64 +68,74 @@ export default function SearchPage({ items, trends }: SearchPageProps) {
     <WebViewPage url={selectedUrl} onBack={() => setSelectedUrl(null)} />
   ) : (
     <div className="search-page-container">
-      {/* Layout principal: panorama + noticias a la izquierda | búsqueda + trends a la derecha */}
+      {/* Header con logo */}
+      <header className="page-header">
+        <div className="header-content">
+          <span className="logo-icon">📰</span>
+          <h1>El Panorama</h1>
+        </div>
+      </header>
+
+      {/* Layout principal */}
       <div className="main-layout">
-        {/* Columna izquierda: Panorama + Resultados */}
+        {/* Columna izquierda */}
         <div className="left-column">
           {/* Sección Panorama */}
-          <div className="panorama-section">
-            <h2>📰 El Panorama</h2>
-            <p>Resumen de las noticias más relevantes del día</p>
-            {/* Aquí puedes agregar contenido adicional del panorama */}
+          <div className="panorama-card">
+            <div className="panorama-header">
+              <span className="panorama-icon">📰</span>
+              <h2>El Panorama</h2>
+            </div>
+            <p className="panorama-description">Resumen de las noticias más relevantes del día</p>
           </div>
 
-          {/* Resultados de noticias */}
-          <div className="resultados-section">
-            <div id="productosresultados">
-              <p className="results-count">
-                {finaldata.length} resultado{finaldata.length !== 1 ? 's' : ''} encontrado{finaldata.length !== 1 ? 's' : ''}
-              </p>
-              <ul id="resultados">
-                {finaldata.map((item, index) => (
-                  <li key={index} className="result-item">
-                    <div className="unproducto">
-                      <h3>{item.title}</h3>
-                      <p>{item.subtitles}</p>
-                      <div className="tags-container">
-                        {item.tags.slice(0, 3).map((tag, idx) => (
-                          <span key={idx} className="tag-badge">{tag}</span>
-                        ))}
-                      </div>
-                      <button
-                        onClick={() => setSelectedUrl(item.url)}
-                        className="view-button"
-                      >
-                        Leer más
-                      </button>
-                      <p>
-                        De <strong>{item.author}</strong> · A las <strong>{item.date}</strong>
-                      </p>
-                      <p>
-                        <strong>{item.newspaper}</strong>
-                      </p>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </div>
+          {/* Resultados */}
+          <div className="resultados-card">
+            <p className="results-count">{finaldata.length} resultados encontrados</p>
+            
+            <ul className="resultados-list">
+              {finaldata.map((item, index) => (
+                <li key={index} className="news-card">
+                  <h3 className="news-title">{item.title}</h3>
+                  
+                  <div className="tags-row">
+                    {item.tags.slice(0, 3).map((tag, idx) => (
+                      <span key={idx} className="tag-pill">{tag}</span>
+                    ))}
+                  </div>
+                  
+                  <button
+                    onClick={() => setSelectedUrl(item.url)}
+                    className="read-more-btn"
+                  >
+                    Leer más
+                  </button>
+                  
+                  <div className="news-meta">
+                    <span>De <strong>{item.author}</strong> · A las <strong>{item.date}</strong></span>
+                  </div>
+                  
+                  <div className="news-source">
+                    <strong>{item.newspaper}</strong>
+                  </div>
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
 
-        {/* Columna derecha: Buscador + Trends (sticky) */}
+        {/* Sidebar derecha */}
         <aside className="right-sidebar">
           {/* Buscador */}
-          <div className="buscador-sidebar">
-            <h4>🔍 Buscar noticias</h4>
-            <div className="search-input-group">
+          <div className="search-card">
+            <h4 className="sidebar-title">
+              <span>🔍</span> Buscar noticias
+            </h4>
+            <div className="search-group">
               <input
-                id="filtro"
                 type="text"
-                placeholder="Busca tema..."
+                className="search-input"
+                placeholder="Venezuela"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyDown={(e) => {
@@ -135,25 +145,25 @@ export default function SearchPage({ items, trends }: SearchPageProps) {
                   }
                 }}
               />
-              <button id="buscador" onClick={filterByQuery}>
+              <button className="search-btn" onClick={filterByQuery}>
                 Buscar
               </button>
             </div>
           </div>
 
           {/* Trends */}
-          <div className="trends-section">
-            <h4>🔥 Trends populares</h4>
+          <div className="trends-card">
+            <h4 className="sidebar-title">
+              <span>🔥</span> Trends populares
+            </h4>
             <div className="trends-list">
               {trends?.slice(0, 15).map((trend) => (
                 <div
                   key={trend.id}
                   className="trend-item"
                   onClick={() => filterByTrend(trend.title)}
-                  style={{ cursor: 'pointer' }}
-                  title={`Filtrar por "${trend.title}"`}
                 >
-                  <strong>{trend.title}</strong>
+                  {trend.title}
                 </div>
               ))}
             </div>
