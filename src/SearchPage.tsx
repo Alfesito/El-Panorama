@@ -2,6 +2,7 @@ import { useState } from 'react';
 import './SearchPage.css';
 import WebViewPage from './WebViewPage';
 
+
 type Item = {
   author: string;
   date: string;
@@ -12,6 +13,7 @@ type Item = {
   newspaper: string;
 };
 
+
 type TrendsItem = {
   id: number;
   title: string;
@@ -20,71 +22,168 @@ type TrendsItem = {
   timeframe: string;
 };
 
+
 type SearchPageProps = {
   items: Item[];
   trends?: TrendsItem[];
 };
+
 
 export default function SearchPage({ items, trends }: SearchPageProps) {
   const [query, setQuery] = useState('');
   const [finaldata, setFinaldata] = useState<Item[]>(items);
   const [selectedUrl, setSelectedUrl] = useState<string | null>(null);
 
-  const getUniqueTags = (arr: Item[]): string[] => {
-    const allTags = arr.flatMap((item) => item.tags);
-    return Array.from(new Set(allTags));
+  // Función para normalizar texto (quitar tildes, ñ -> n, etc.)
+  const normalizeText = (text: string): string => {
+    return text
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .trim();
   };
 
-  const tags = getUniqueTags(items);
+  // Calcular similitud entre dos strings (0 a 1)
+  const calculateSimilarity = (str1: string, str2: string): number => {
+    const longer = str1.length > str2.length ? str1 : str2;
+    const shorter = str1.length > str2.length ? str2 : str1;
+    
+    if (longer.length === 0) return 1.0;
+    
+    const editDistance = getEditDistance(longer, shorter);
+    return (longer.length - editDistance) / longer.length;
+  };
+
+  // Distancia de Levenshtein (para similitud)
+  const getEditDistance = (s1: string, s2: string): number => {
+    const costs: number[] = [];
+    for (let i = 0; i <= s1.length; i++) {
+      let lastValue = i;
+      for (let j = 0; j <= s2.length; j++) {
+        if (i === 0) {
+          costs[j] = j;
+        } else if (j > 0) {
+          let newValue = costs[j - 1];
+          if (s1.charAt(i - 1) !== s2.charAt(j - 1)) {
+            newValue = Math.min(Math.min(newValue, lastValue), costs[j]) + 1;
+          }
+          costs[j - 1] = lastValue;
+          lastValue = newValue;
+        }
+      }
+      if (i > 0) costs[s2.length] = lastValue;
+    }
+    return costs[s2.length];
+  };
 
   const filterByQuery = () => {
-    const searchWords = query.toLowerCase().trim().split(/\s+/);
-    const uniqueTitles = new Set<string>();
-    const filtered = items.filter((item) => {
-      const wordsInItem = [item.title, item.subtitles, ...item.tags]
-        .join(' ')
-        .toLowerCase()
-        .split(/\s+/);
-      const matches = searchWords.every((word) => wordsInItem.includes(word));
-      if (matches && !uniqueTitles.has(item.title)) {
-        uniqueTitles.add(item.title);
-        return true;
-      }
-      return false;
-    });
-    setFinaldata(filtered);
-  };
-
-  const filterByTag = (selectedTag: string) => {
-    const uniqueTitles = new Set<string>();
-    if (selectedTag === 'All') {
+    if (!query.trim()) {
       setFinaldata(items);
-    } else {
-      const filtered = items.filter((item) => {
-        const matches = item.tags.includes(selectedTag);
-        if (matches && !uniqueTitles.has(item.title)) {
+      return;
+    }
+
+    const searchWords = normalizeText(query).split(/\s+/);
+    const uniqueTitles = new Set<string>();
+    
+    // Stopwords en español (palabras a ignorar)
+    const stopwords = new Set(['el', 'la', 'los', 'las', 'de', 'del', 'y', 'en', 'un', 'una', 'es', 'por', 'con', 'para', 'al', 'a']);
+    const filteredSearchWords = searchWords.filter(word => !stopwords.has(word) && word.length > 2);
+
+    const filtered = items.filter((item) => {
+      // Normalizar todos los campos
+      const titleNorm = normalizeText(item.title);
+      const subtitlesNorm = normalizeText(item.subtitles);
+      const tagsNorm = item.tags.map(tag => normalizeText(tag));
+      
+      // Método 1: Match exacto en título (alta prioridad)
+      if (filteredSearchWords.every(word => titleNorm.includes(word))) {
+        if (!uniqueTitles.has(item.title)) {
           uniqueTitles.add(item.title);
           return true;
         }
         return false;
-      });
-      setFinaldata(filtered);
-    }
-    setQuery('');
+      }
+
+      // Método 2: Match exacto en tags
+      const matchInTags = filteredSearchWords.some(word => 
+        tagsNorm.some(tag => tag === word || tag.includes(word))
+      );
+      if (matchInTags && filteredSearchWords.length <= 2) {
+        if (!uniqueTitles.has(item.title)) {
+          uniqueTitles.add(item.title);
+          return true;
+        }
+        return false;
+      }
+
+      // Método 3: Al menos 70% de palabras clave presentes en título + subtítulos
+      const combinedText = `${titleNorm} ${subtitlesNorm}`;
+      const matchedWords = filteredSearchWords.filter(word => combinedText.includes(word));
+      const matchRatio = matchedWords.length / filteredSearchWords.length;
+      
+      if (matchRatio >= 0.7) {
+        if (!uniqueTitles.has(item.title)) {
+          uniqueTitles.add(item.title);
+          return true;
+        }
+      }
+
+      return false;
+    });
+
+    setFinaldata(filtered);
   };
 
   const filterByTrend = (trendTitle: string) => {
+    const trendNormalized = normalizeText(trendTitle);
+    const trendWords = trendNormalized.split(/\s+/).filter(w => w.length > 2);
     const uniqueTitles = new Set<string>();
+    
+    // Stopwords en español
+    const stopwords = new Set(['el', 'la', 'los', 'las', 'de', 'del', 'y', 'en', 'un', 'una', 'es', 'por', 'con', 'para', 'al']);
+    const filteredTrendWords = trendWords.filter(word => !stopwords.has(word));
+
     const filtered = items.filter((item) => {
-      const searchText = trendTitle.toLowerCase();
-      const itemText = [item.title, item.subtitles, ...item.tags].join(' ').toLowerCase();
-      const matches = itemText.includes(searchText);
-      if (matches && !uniqueTitles.has(item.title)) {
-        uniqueTitles.add(item.title);
-        return true;
+      const titleNorm = normalizeText(item.title);
+      const subtitlesNorm = normalizeText(item.subtitles);
+      const tagsNorm = item.tags.map(tag => normalizeText(tag));
+
+      // Método 1: Similitud alta en título (>70%)
+      const titleSimilarity = calculateSimilarity(trendNormalized, titleNorm);
+      if (titleSimilarity > 0.7) {
+        if (!uniqueTitles.has(item.title)) {
+          uniqueTitles.add(item.title);
+          return true;
+        }
+        return false;
       }
+
+      // Método 2: Match exacto en tags
+      if (tagsNorm.some(tag => tag === trendNormalized || tag.includes(trendNormalized))) {
+        if (!uniqueTitles.has(item.title)) {
+          uniqueTitles.add(item.title);
+          return true;
+        }
+        return false;
+      }
+
+      // Método 3: Al menos 60% de palabras del trend en título/subtítulos
+      const combinedText = `${titleNorm} ${subtitlesNorm}`;
+      const matchedWords = filteredTrendWords.filter(word => combinedText.includes(word));
+      const matchRatio = filteredTrendWords.length > 0 
+        ? matchedWords.length / filteredTrendWords.length 
+        : 0;
+      
+      if (matchRatio >= 0.6 && filteredTrendWords.length > 0) {
+        if (!uniqueTitles.has(item.title)) {
+          uniqueTitles.add(item.title);
+          return true;
+        }
+      }
+
       return false;
     });
+
     setFinaldata(filtered);
     setQuery(trendTitle);
   };
@@ -107,6 +206,9 @@ export default function SearchPage({ items, trends }: SearchPageProps) {
                   placeholder="Busca tema"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') filterByQuery();
+                  }}
                 />
               </div>
               <div className="col">
@@ -114,32 +216,26 @@ export default function SearchPage({ items, trends }: SearchPageProps) {
                   Buscar
                 </button>
               </div>
-              <div className="col">
-                <select
-                  id="selector"
-                  defaultValue="All"
-                  onChange={(e) => filterByTag(e.target.value)}
-                >
-                  <option value="All">Todos</option>
-                  {tags.slice(0, 10).map((tag, index) => (
-                    <option key={index} value={tag}>
-                      {tag}
-                    </option>
-                  ))}
-                </select>
-              </div>
             </div>
           </div>
 
           {/* Resultados */}
           <div className="resultados-section">
             <div id="productosresultados">
+              <p className="results-count">
+                {finaldata.length} resultado{finaldata.length !== 1 ? 's' : ''} encontrado{finaldata.length !== 1 ? 's' : ''}
+              </p>
               <ul id="resultados">
                 {finaldata.map((item, index) => (
                   <li key={index} className="result-item">
                     <div className="unproducto">
                       <h3>{item.title}</h3>
                       <p>{item.subtitles}</p>
+                      <div className="tags-container">
+                        {item.tags.slice(0, 3).map((tag, idx) => (
+                          <span key={idx} className="tag-badge">{tag}</span>
+                        ))}
+                      </div>
                       <button
                         onClick={() => setSelectedUrl(item.url)}
                         className="view-button"
@@ -147,8 +243,8 @@ export default function SearchPage({ items, trends }: SearchPageProps) {
                         Leer más
                       </button>
                       <p>
-                        <strong>Autor:</strong> {item.author} |{' '}
-                        <strong>Fecha:</strong> {item.date}
+                        De <strong>{item.author}</strong>  ·{' '}
+                        A las <strong>{item.date}</strong>
                       </p>
                       <p>
                         <strong>{item.newspaper}</strong>
@@ -165,7 +261,7 @@ export default function SearchPage({ items, trends }: SearchPageProps) {
         <aside className="trends-sidebar">
           <h4>🔥 Trends populares</h4>
           <div className="trends-list">
-            {trends?.slice(0, 15).map((trend) => (
+            {trends?.slice(0, 25).map((trend) => (
               <div
                 key={trend.id}
                 className="trend-item"
@@ -173,6 +269,7 @@ export default function SearchPage({ items, trends }: SearchPageProps) {
                 title={`Filtrar por "${trend.title}"`}
               >
                 <strong>{trend.title}</strong>
+                <span className="trend-volume">{trend.volume}</span>
               </div>
             ))}
           </div>
