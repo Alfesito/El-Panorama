@@ -3,20 +3,22 @@ import mockdata from './config/json/merged_json.json';
 import './App.css';
 import Error from './Error';
 import CONFIG from './config/config';
-import SearchPage from './SeachPage';
+import SearchPage from './SearchPage';
 
+// Tipos exactos
 type DataState = 
   | { data: any[] }
   | { e: { description: string } };
 
 type TrendsState = 
-  | { trends: any[] | null; summary: any | null }
+  | { trends: any[]; summary?: any }  // Summary opcional
   | { e: { description: string } };
 
 function App() {
   const [dataState, setDataState] = useState<DataState>({ data: [] });
-  const [trendsState, setTrendsState] = useState<TrendsState>({ trends: null, summary: null });
-  const [loading, setLoading] = useState<boolean>(true);
+  const [trendsState, setTrendsState] = useState<TrendsState>({ trends: [] });
+  const [loadingNews, setLoadingNews] = useState(true);
+  const [loadingTrends, setLoadingTrends] = useState(true);
 
   const USE_SERVER = CONFIG.use_server;
   const NEWS_URL = CONFIG.news_url;
@@ -26,12 +28,11 @@ function App() {
     if (USE_SERVER) {
       try {
         const response = await fetch(NEWS_URL);
-        if (response.status === 200) {
-          const res = await response.json();
-          setDataState({ data: res });
-        } else {
-          setDataState({ e: { description: `Error ${response.status}: ${response.statusText}` } });
+        if (!response.ok) {
+          throw Error(`HTTP ${response.status}: ${response.statusText}`);
         }
+        const res = await response.json();
+        setDataState({ data: res });
       } catch (e: any) {
         setDataState({ e: { description: e.message } });
       }
@@ -43,66 +44,61 @@ function App() {
   const downloadTrends = async () => {
     try {
       const response = await fetch(TRENDS_URL);
-      if (response.status === 200) {
-        const res = await response.json();
-        setTrendsState({ 
-          trends: res.trends || [], 
-          summary: res.summary || null 
-        });
-      } else {
-        setTrendsState({ e: { description: `Error trends: ${response.status}` } });
+      if (!response.ok) {
+        throw Error(`HTTP ${response.status}`);
       }
+      const res = await response.json();
+      setTrendsState({ 
+        trends: res.trends || [], 
+        summary: res.summary 
+      });
     } catch (e: any) {
       setTrendsState({ e: { description: e.message } });
+      console.warn('Trends no disponibles:', e.message);  // No rompe app
     }
   };
 
   useEffect(() => {
     async function fetchAll() {
-      await Promise.all([downloadData(), downloadTrends()]);
-      setTimeout(() => setLoading(false), 500);
+      await Promise.all([
+        downloadData().then(() => setLoadingNews(false)),
+        downloadTrends().then(() => setLoadingTrends(false))
+      ]);
     }
     fetchAll();
   }, []);
 
+  const loading = loadingNews || loadingTrends;
+  const hasNewsError = 'e' in dataState;
+  const hasTrendsError = 'e' in trendsState;
+
   return (
-    <>
-      <h1>El Panorama</h1>
-      
-      {/* Trends Section */}
-      {!loading && 'trends' in trendsState && trendsState.trends && (
-        <div className="trends-section mb-4 p-4 border rounded">
-          <h3>🔥 Temas del día</h3>
-          {trendsState.summary && (
-            <p className="mb-3">
-              <strong>{trendsState.summary.unique_total} trends únicos</strong> 
-              (Google: {trendsState.summary.google_total}, X: {trendsState.summary.xtrends_total})
-              <br />
-              <small>Actualizado: {new Date(trendsState.summary.timestamp || '').toLocaleString('es-ES')}</small>
-            </p>
-          )}
-          <div className="trends-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '10px' }}>
-            {trendsState.trends.slice(0, 12).map((trend: any) => (  // Top 12
-              <div key={trend.id} className="trend-item p-2 bg-light rounded hover:shadow cursor-pointer">
-                <strong>{trend.title}</strong>
-                <br />
-                <small>
-                  {trend.source} • {trend.volume || 'N/A'} • {trend.timeframe}
-                </small>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+    <div className="app-container">
+      <header className="app-header">
+        <h1>📰 El Panorama</h1>
+        <p>Noticias España + Trends Google/X en tiempo real</p>
+      </header>
 
       {loading ? (
-        <p>Cargando noticias y trends...</p>
-      ) : "e" in dataState ? (
+        <div className="loading-container">
+          <p>🔄 Cargando noticias y trends...</p>
+        </div>
+      ) : hasNewsError ? (
         <Error error={dataState.e} />
       ) : (
-        <SearchPage items={dataState.data} />
+        <SearchPage 
+          items={dataState.data} 
+          trends={('trends' in trendsState) ? trendsState.trends : []}
+        />
       )}
-    </>
+
+      {/* Status trends si falla */}
+      {!loadingTrends && hasTrendsError && (
+        <div className="trends-warning">
+          ⚠️ Trends temporalmente no disponibles
+        </div>
+      )}
+    </div>
   );
 }
 
