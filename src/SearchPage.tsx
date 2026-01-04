@@ -93,53 +93,34 @@ export default function SearchPage({ items, trends }: SearchPageProps) {
     <WebViewPage url={selectedUrl} onBack={() => setSelectedUrl(null)} />
   ) : (
     <div className="search-page-container">
-      {/* Layout principal: búsqueda + resultados | trends sidebar */}
+      {/* Layout principal: panorama + noticias a la izquierda | búsqueda + trends a la derecha */}
       <div className="main-layout">
-        {/* Columna izquierda: búsqueda + resultados */}
+        {/* Columna izquierda: Panorama + Resultados */}
         <div className="left-column">
-          {/* Buscador */}
-          <div className="buscador">
-            <div className="search-filter-row">
-              <div className="col">
-                <input
-                  id="filtro"
-                  type="text"
-                  placeholder="Busca tema"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                />
-              </div>
-              <div className="col">
-                <button id="buscador" onClick={filterByQuery}>
-                  Buscar
-                </button>
-              </div>
-              <div className="col">
-                <select
-                  id="selector"
-                  defaultValue="All"
-                  onChange={(e) => filterByTag(e.target.value)}
-                >
-                  <option value="All">Todos</option>
-                  {tags.slice(0, 10).map((tag, index) => (
-                    <option key={index} value={tag}>
-                      {tag}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
+          {/* Sección Panorama */}
+          <div className="panorama-section">
+            <h2>📰 El Panorama</h2>
+            <p>Resumen de las noticias más relevantes del día</p>
+            {/* Aquí puedes agregar contenido adicional del panorama */}
           </div>
 
-          {/* Resultados */}
+          {/* Resultados de noticias */}
           <div className="resultados-section">
             <div id="productosresultados">
+              <p className="results-count">
+                {finaldata.length} resultado{finaldata.length !== 1 ? 's' : ''} encontrado{finaldata.length !== 1 ? 's' : ''}
+              </p>
               <ul id="resultados">
                 {finaldata.map((item, index) => (
                   <li key={index} className="result-item">
                     <div className="unproducto">
                       <h3>{item.title}</h3>
                       <p>{item.subtitles}</p>
+                      <div className="tags-container">
+                        {item.tags.slice(0, 3).map((tag, idx) => (
+                          <span key={idx} className="tag-badge">{tag}</span>
+                        ))}
+                      </div>
                       <button
                         onClick={() => setSelectedUrl(item.url)}
                         className="view-button"
@@ -147,8 +128,7 @@ export default function SearchPage({ items, trends }: SearchPageProps) {
                         Leer más
                       </button>
                       <p>
-                        <strong>Autor:</strong> {item.author} |{' '}
-                        <strong>Fecha:</strong> {item.date}
+                        De <strong>{item.author}</strong> · A las <strong>{item.date}</strong>
                       </p>
                       <p>
                         <strong>{item.newspaper}</strong>
@@ -161,20 +141,47 @@ export default function SearchPage({ items, trends }: SearchPageProps) {
           </div>
         </div>
 
-        {/* Sidebar Trends Derecha (sticky desde arriba) */}
-        <aside className="trends-sidebar">
-          <h4>🔥 Trends populares</h4>
-          <div className="trends-list">
-            {trends?.slice(0, 15).map((trend) => (
-              <div
-                key={trend.id}
-                className="trend-item"
-                onClick={() => filterByTrend(trend.title)}
-                title={`Filtrar por "${trend.title}"`}
-              >
-                <strong>{trend.title}</strong>
-              </div>
-            ))}
+        {/* Columna derecha: Buscador + Trends (sticky) */}
+        <aside className="right-sidebar">
+          {/* Buscador */}
+          <div className="buscador-sidebar">
+            <h4>🔍 Buscar noticias</h4>
+            <div className="search-input-group">
+              <input
+                id="filtro"
+                type="text"
+                placeholder="Busca tema..."
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    filterByQuery();
+                  }
+                }}
+              />
+              <button id="buscador" onClick={filterByQuery}>
+                Buscar
+              </button>
+            </div>
+          </div>
+
+          {/* Trends */}
+          <div className="trends-section">
+            <h4>🔥 Trends populares</h4>
+            <div className="trends-list">
+              {trends?.slice(0, 15).map((trend) => (
+                <div
+                  key={trend.id}
+                  className="trend-item"
+                  onClick={() => filterByTrend(trend.title)}
+                  style={{ cursor: 'pointer' }}
+                  title={`Filtrar por "${trend.title}"`}
+                >
+                  <strong>{trend.title}</strong>
+                </div>
+              ))}
+            </div>
           </div>
         </aside>
       </div>
