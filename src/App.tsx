@@ -74,10 +74,6 @@ function App() {
 
   return (
     <div className="app-container">
-      <header className="app-header">
-        <h1>📰 El Panorama</h1>
-      </header>
-
       {loading ? (
         <div className="loading-container">
           <p>🔄 Cargando noticias y trends...</p>

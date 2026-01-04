@@ -68,31 +68,48 @@ export default function SearchPage({ items, trends }: SearchPageProps) {
     <WebViewPage url={selectedUrl} onBack={() => setSelectedUrl(null)} />
   ) : (
     <div className="search-page-container">
-      {/* Header con logo */}
-      <header className="page-header">
-        <div className="header-content">
-          <span className="logo-icon">📰</span>
-          <h1>El Panorama</h1>
-        </div>
-      </header>
-
       {/* Layout principal */}
       <div className="main-layout">
         {/* Columna izquierda */}
         <div className="left-column">
-          {/* Sección Panorama */}
-          <div className="panorama-card">
-            <div className="panorama-header">
-              <span className="panorama-icon">📰</span>
-              <h2>El Panorama</h2>
+          {/* Card combinada: Panorama + Buscador horizontal */}
+          <div className="panorama-search-card">
+            {/* Header El Panorama */}
+            <div className="panorama-section">
+              <div className="header-content">
+                <span className="logo-icon">📰</span>
+                <h1>El Panorama</h1>
+              </div>
             </div>
-            <p className="panorama-description">Resumen de las noticias más relevantes del día</p>
+
+            {/* Buscador */}
+            <div className="search-section">
+              <h4 className="search-title">
+                <span>🔍</span> Buscar noticias
+              </h4>
+              <div className="search-group-horizontal">
+                <input
+                  type="text"
+                  className="search-input"
+                  placeholder="Venezuela"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      filterByQuery();
+                    }
+                  }}
+                />
+                <button className="search-btn" onClick={filterByQuery}>
+                  Buscar
+                </button>
+              </div>
+            </div>
           </div>
 
           {/* Resultados */}
-          <div className="resultados-card">
-            <p className="results-count">{finaldata.length} resultados encontrados</p>
-            
+          <div className="resultados-card">            
             <ul className="resultados-list">
               {finaldata.map((item, index) => (
                 <li key={index} className="news-card">
@@ -124,40 +141,15 @@ export default function SearchPage({ items, trends }: SearchPageProps) {
           </div>
         </div>
 
-        {/* Sidebar derecha */}
+        {/* Sidebar derecha - Solo Trends */}
         <aside className="right-sidebar">
-          {/* Buscador */}
-          <div className="search-card">
-            <h4 className="sidebar-title">
-              <span>🔍</span> Buscar noticias
-            </h4>
-            <div className="search-group">
-              <input
-                type="text"
-                className="search-input"
-                placeholder="Venezuela"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    filterByQuery();
-                  }
-                }}
-              />
-              <button className="search-btn" onClick={filterByQuery}>
-                Buscar
-              </button>
-            </div>
-          </div>
-
           {/* Trends */}
           <div className="trends-card">
             <h4 className="sidebar-title">
               <span>🔥</span> Trends populares
             </h4>
             <div className="trends-list">
-              {trends?.slice(0, 15).map((trend) => (
+              {trends?.slice(0, 20).map((trend) => (
                 <div
                   key={trend.id}
                   className="trend-item"
