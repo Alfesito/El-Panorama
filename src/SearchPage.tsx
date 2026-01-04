@@ -22,7 +22,7 @@ type TrendsItem = {
 
 type SearchPageProps = {
   items: Item[];
-  trends?: TrendsItem[];  // Nuevo prop para trends
+  trends?: TrendsItem[];
 };
 
 export default function SearchPage({ items, trends }: SearchPageProps) {
@@ -73,7 +73,6 @@ export default function SearchPage({ items, trends }: SearchPageProps) {
     setQuery('');
   };
 
-  // Nuevo: Filtrar por trend (busca en title/tags/subtitles)
   const filterByTrend = (trendTitle: string) => {
     const uniqueTitles = new Set<string>();
     const filtered = items.filter((item) => {
@@ -87,81 +86,86 @@ export default function SearchPage({ items, trends }: SearchPageProps) {
       return false;
     });
     setFinaldata(filtered);
-    setQuery(trendTitle);  // Opcional: poner en input
+    setQuery(trendTitle);
   };
 
   return selectedUrl ? (
     <WebViewPage url={selectedUrl} onBack={() => setSelectedUrl(null)} />
   ) : (
     <div className="search-page-container">
-      {/* Header buscador */}
-      <div className="buscador">
-        <div className="search-filter-row">
-          <div className="col">
-            <input
-              id="filtro"
-              type="text"
-              placeholder="Busca tema"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-            />
-            <button id="buscador" onClick={filterByQuery}>
-              Buscar
-            </button>
+      {/* Layout principal: búsqueda + resultados | trends sidebar */}
+      <div className="main-layout">
+        {/* Columna izquierda: búsqueda + resultados */}
+        <div className="left-column">
+          {/* Buscador */}
+          <div className="buscador">
+            <div className="search-filter-row">
+              <div className="col">
+                <input
+                  id="filtro"
+                  type="text"
+                  placeholder="Busca tema"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                />
+              </div>
+              <div className="col">
+                <button id="buscador" onClick={filterByQuery}>
+                  Buscar
+                </button>
+              </div>
+              <div className="col">
+                <select
+                  id="selector"
+                  defaultValue="All"
+                  onChange={(e) => filterByTag(e.target.value)}
+                >
+                  <option value="All">Todos</option>
+                  {tags.slice(0, 10).map((tag, index) => (
+                    <option key={index} value={tag}>
+                      {tag}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
           </div>
-          <div className="col">
-            <select
-              id="selector"
-              defaultValue="All"
-              onChange={(e) => filterByTag(e.target.value)}
-            >
-              <option value="All">All</option>
-              {tags.slice(0, 10).map((tag, index) => (  // Top 10 tags
-                <option key={index} value={tag}>
-                  {tag}
-                </option>
-              ))}
-            </select>
+
+          {/* Resultados */}
+          <div className="resultados-section">
+            <div id="productosresultados">
+              <ul id="resultados">
+                {finaldata.map((item, index) => (
+                  <li key={index} className="result-item">
+                    <div className="unproducto">
+                      <h3>{item.title}</h3>
+                      <p>{item.subtitles}</p>
+                      <button
+                        onClick={() => setSelectedUrl(item.url)}
+                        className="view-button"
+                      >
+                        Leer más
+                      </button>
+                      <p>
+                        <strong>Autor:</strong> {item.author} |{' '}
+                        <strong>Fecha:</strong> {item.date}
+                      </p>
+                      <p>
+                        <strong>{item.newspaper}</strong>
+                      </p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Layout principal: resultados + trends sidebar */}
-      <div className="main-content">
-        {/* Resultados noticias */}
-        <div className="resultados-section">
-          <div id="productosresultados">
-            <ul id="resultados">
-              {finaldata.map((item, index) => (
-                <li key={index} className="result-item">
-                  <div className="unproducto">
-                    <h3>{item.title}</h3>
-                    <p>{item.subtitles}</p>
-                    <button
-                      onClick={() => setSelectedUrl(item.url)}
-                      className="view-button"
-                    >
-                      Leer más
-                    </button>
-                    <p>
-                      <strong>Autor:</strong> {item.author} |{' '}
-                      <strong>Fecha:</strong> {item.date}
-                    </p>
-                    <p>
-                      <strong> {item.newspaper} </strong>
-                    </p>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-
-        {/* Sidebar Trends Derecha */}
-        <div className="trends-sidebar">
+        {/* Sidebar Trends Derecha (sticky desde arriba) */}
+        <aside className="trends-sidebar">
           <h4>🔥 Trends populares</h4>
           <div className="trends-list">
-            {trends?.slice(0, 15).map((trend) => (  // Top 15 trends
+            {trends?.slice(0, 15).map((trend) => (
               <div
                 key={trend.id}
                 className="trend-item"
@@ -176,7 +180,7 @@ export default function SearchPage({ items, trends }: SearchPageProps) {
               </div>
             ))}
           </div>
-        </div>
+        </aside>
       </div>
     </div>
   );
