@@ -47,9 +47,9 @@ export default function SearchPage({ items, trends }: SearchPageProps) {
   const calculateSimilarity = (str1: string, str2: string): number => {
     const longer = str1.length > str2.length ? str1 : str2;
     const shorter = str1.length > str2.length ? str2 : str1;
-    
+
     if (longer.length === 0) return 1.0;
-    
+
     const editDistance = getEditDistance(longer, shorter);
     return (longer.length - editDistance) / longer.length;
   };
@@ -84,7 +84,7 @@ export default function SearchPage({ items, trends }: SearchPageProps) {
 
     const searchWords = normalizeText(query).split(/\s+/);
     const uniqueTitles = new Set<string>();
-    
+
     // Stopwords en español (palabras a ignorar)
     const stopwords = new Set(['el', 'la', 'los', 'las', 'de', 'del', 'y', 'en', 'un', 'una', 'es', 'por', 'con', 'para', 'al', 'a']);
     const filteredSearchWords = searchWords.filter(word => !stopwords.has(word) && word.length > 2);
@@ -94,7 +94,7 @@ export default function SearchPage({ items, trends }: SearchPageProps) {
       const titleNorm = normalizeText(item.title);
       const subtitlesNorm = normalizeText(item.subtitles);
       const tagsNorm = item.tags.map(tag => normalizeText(tag));
-      
+
       // Método 1: Match exacto en título (alta prioridad)
       if (filteredSearchWords.every(word => titleNorm.includes(word))) {
         if (!uniqueTitles.has(item.title)) {
@@ -120,7 +120,7 @@ export default function SearchPage({ items, trends }: SearchPageProps) {
       const combinedText = `${titleNorm} ${subtitlesNorm}`;
       const matchedWords = filteredSearchWords.filter(word => combinedText.includes(word));
       const matchRatio = matchedWords.length / filteredSearchWords.length;
-      
+
       if (matchRatio >= 0.7) {
         if (!uniqueTitles.has(item.title)) {
           uniqueTitles.add(item.title);
@@ -135,13 +135,17 @@ export default function SearchPage({ items, trends }: SearchPageProps) {
   };
 
   const filterByTrend = (trendTitle: string) => {
+    console.log('🔍 Filtrando por trend:', trendTitle); // DEBUG
+
     const trendNormalized = normalizeText(trendTitle);
     const trendWords = trendNormalized.split(/\s+/).filter(w => w.length > 2);
     const uniqueTitles = new Set<string>();
-    
+
     // Stopwords en español
     const stopwords = new Set(['el', 'la', 'los', 'las', 'de', 'del', 'y', 'en', 'un', 'una', 'es', 'por', 'con', 'para', 'al']);
     const filteredTrendWords = trendWords.filter(word => !stopwords.has(word));
+
+    console.log('📝 Palabras filtradas:', filteredTrendWords); // DEBUG
 
     const filtered = items.filter((item) => {
       const titleNorm = normalizeText(item.title);
@@ -173,7 +177,7 @@ export default function SearchPage({ items, trends }: SearchPageProps) {
       const matchRatio = filteredTrendWords.length > 0 
         ? matchedWords.length / filteredTrendWords.length 
         : 0;
-      
+
       if (matchRatio >= 0.6 && filteredTrendWords.length > 0) {
         if (!uniqueTitles.has(item.title)) {
           uniqueTitles.add(item.title);
@@ -184,8 +188,15 @@ export default function SearchPage({ items, trends }: SearchPageProps) {
       return false;
     });
 
+    console.log('✅ Resultados encontrados:', filtered.length); // DEBUG
     setFinaldata(filtered);
     setQuery(trendTitle);
+  };
+
+  // AGREGADO: Manejador de click separado
+  const handleTrendClick = (trendTitle: string) => {
+    console.log('👆 Click en trend:', trendTitle); // DEBUG
+    filterByTrend(trendTitle);
   };
 
   return selectedUrl ? (
@@ -265,7 +276,8 @@ export default function SearchPage({ items, trends }: SearchPageProps) {
               <div
                 key={trend.id}
                 className="trend-item"
-                onClick={() => filterByTrend(trend.title)}
+                onClick={() => handleTrendClick(trend.title)}
+                style={{ cursor: 'pointer' }}
                 title={`Filtrar por "${trend.title}"`}
               >
                 <strong>{trend.title}</strong>
