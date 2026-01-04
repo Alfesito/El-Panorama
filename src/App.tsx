@@ -76,7 +76,6 @@ function App() {
     <div className="app-container">
       <header className="app-header">
         <h1>📰 El Panorama</h1>
-        <p>Noticias España + Trends Google/X en tiempo real</p>
       </header>
 
       {loading ? (
