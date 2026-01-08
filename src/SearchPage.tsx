@@ -34,6 +34,13 @@ export default function SearchPage({ items, trends }: SearchPageProps) {
   const [finaldata, setFinaldata] = useState<Item[]>(items);
   const [selectedUrl, setSelectedUrl] = useState<string | null>(null);
 
+  // Función para normalizar texto (eliminar acentos y convertir a minúsculas)
+  const normalizeText = (text: string): string => {
+    return text
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, ''); // Elimina diacríticos (acentos, tildes, etc.)
+  };
 
   // Función para formatear fecha relativa
   const formatRelativeTime = (dateString: string): string => {
@@ -78,14 +85,15 @@ export default function SearchPage({ items, trends }: SearchPageProps) {
       return;
     }
 
-    const searchWords = query.toLowerCase().trim().split(/\s+/);
+    const searchWords = query.trim().split(/\s+/).map(word => normalizeText(word));
     const uniqueTitles = new Set<string>();
     
     const filtered = items
       .map((item) => {
-        const title = item.title.toLowerCase();
-        const subtitles = item.subtitles.toLowerCase();
-        const tags = item.tags.join(' ').toLowerCase();
+        // Normalizar todos los campos del item
+        const title = normalizeText(item.title);
+        const subtitles = normalizeText(item.subtitles);
+        const tags = normalizeText(item.tags.join(' '));
         
         // Calcular puntuación por relevancia
         let score = 0;
@@ -113,10 +121,11 @@ export default function SearchPage({ items, trends }: SearchPageProps) {
 
   const filterByTrend = (trendTitle: string) => {
     const uniqueTitles = new Set<string>();
+    const normalizedSearch = normalizeText(trendTitle);
+    
     const filtered = items.filter((item) => {
-      const searchText = trendTitle.toLowerCase();
-      const itemText = [item.title, item.subtitles, ...item.tags].join(' ').toLowerCase();
-      const matches = itemText.includes(searchText);
+      const itemText = normalizeText([item.title, item.subtitles, ...item.tags].join(' '));
+      const matches = itemText.includes(normalizedSearch);
       if (matches && !uniqueTitles.has(item.title)) {
         uniqueTitles.add(item.title);
         return true;
