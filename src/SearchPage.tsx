@@ -2,7 +2,6 @@ import { useState } from 'react';
 import './SearchPage.css';
 import WebViewPage from './WebViewPage';
 
-
 type Item = {
   author: string;
   date: string;
@@ -13,7 +12,6 @@ type Item = {
   newspaper: string;
 };
 
-
 type TrendsItem = {
   id: number;
   title: string;
@@ -22,25 +20,15 @@ type TrendsItem = {
   timeframe: string;
 };
 
-
 type SearchPageProps = {
   items: Item[];
   trends?: TrendsItem[];
 };
 
-
 export default function SearchPage({ items, trends }: SearchPageProps) {
   const [query, setQuery] = useState('');
   const [finaldata, setFinaldata] = useState<Item[]>(items);
   const [selectedUrl, setSelectedUrl] = useState<string | null>(null);
-
-  // Función para normalizar texto (eliminar acentos y convertir a minúsculas)
-  const normalizeText = (text: string): string => {
-    return text
-      .toLowerCase()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, ''); // Elimina diacríticos (acentos, tildes, etc.)
-  };
 
   // Función para formatear fecha relativa
   const formatRelativeTime = (dateString: string): string => {
@@ -51,7 +39,6 @@ export default function SearchPage({ items, trends }: SearchPageProps) {
       const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
       const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
       const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
-
 
       if (diffInMinutes < 1) {
         return 'Hace menos de 1 minuto';
@@ -74,58 +61,34 @@ export default function SearchPage({ items, trends }: SearchPageProps) {
         return `Hace ${years} año${years !== 1 ? 's' : ''}`;
       }
     } catch (error) {
-      return dateString;
+      return dateString; // Si hay error, devuelve la fecha original
     }
   };
 
-
   const filterByQuery = () => {
-    if (!query.trim()) {
-      setFinaldata(items);
-      return;
-    }
-
-    const searchWords = query.trim().split(/\s+/).map(word => normalizeText(word));
+    const searchWords = query.toLowerCase().trim().split(/\s+/);
     const uniqueTitles = new Set<string>();
-    
-    const filtered = items
-      .map((item) => {
-        // Normalizar todos los campos del item
-        const title = normalizeText(item.title);
-        const subtitles = normalizeText(item.subtitles);
-        const tags = normalizeText(item.tags.join(' '));
-        
-        // Calcular puntuación por relevancia
-        let score = 0;
-        searchWords.forEach((word) => {
-          if (title.includes(word)) score += 3;      // Título: máxima prioridad
-          if (subtitles.includes(word)) score += 2;  // Subtítulo: prioridad media
-          if (tags.includes(word)) score += 1;       // Tags: menor prioridad
-        });
-        
-        return { ...item, score };
-      })
-      .filter((item) => {
-        // Solo incluir items con puntuación > 0 y títulos únicos
-        if (item.score > 0 && !uniqueTitles.has(item.title)) {
-          uniqueTitles.add(item.title);
-          return true;
-        }
-        return false;
-      })
-      .sort((a, b) => b.score - a.score); // Ordenar de mayor a menor relevancia
-    
+    const filtered = items.filter((item) => {
+      const wordsInItem = [item.title, item.subtitles, ...item.tags]
+        .join(' ')
+        .toLowerCase()
+        .split(/\s+/);
+      const matches = searchWords.every((word) => wordsInItem.includes(word));
+      if (matches && !uniqueTitles.has(item.title)) {
+        uniqueTitles.add(item.title);
+        return true;
+      }
+      return false;
+    });
     setFinaldata(filtered);
   };
 
-
   const filterByTrend = (trendTitle: string) => {
     const uniqueTitles = new Set<string>();
-    const normalizedSearch = normalizeText(trendTitle);
-    
     const filtered = items.filter((item) => {
-      const itemText = normalizeText([item.title, item.subtitles, ...item.tags].join(' '));
-      const matches = itemText.includes(normalizedSearch);
+      const searchText = trendTitle.toLowerCase();
+      const itemText = [item.title, item.subtitles, ...item.tags].join(' ').toLowerCase();
+      const matches = itemText.includes(searchText);
       if (matches && !uniqueTitles.has(item.title)) {
         uniqueTitles.add(item.title);
         return true;
@@ -135,7 +98,6 @@ export default function SearchPage({ items, trends }: SearchPageProps) {
     setFinaldata(filtered);
     setQuery(trendTitle);
   };
-
 
   return selectedUrl ? (
     <WebViewPage url={selectedUrl} onBack={() => setSelectedUrl(null)} />
@@ -154,7 +116,6 @@ export default function SearchPage({ items, trends }: SearchPageProps) {
                 <header><h1>El Panorama</h1></header>
               </div>
             </div>
-
 
             {/* Buscador */}
             <div className="search-section">
@@ -180,7 +141,6 @@ export default function SearchPage({ items, trends }: SearchPageProps) {
               </div>
             </div>
           </div>
-
 
           {/* Resultados */}
           <div className="resultados-card">            
@@ -214,7 +174,6 @@ export default function SearchPage({ items, trends }: SearchPageProps) {
             </ul>
           </div>
         </div>
-
 
         {/* Sidebar derecha - Solo Trends */}
         <aside className="right-sidebar">
