@@ -18,6 +18,7 @@ type TrendsItem = {
   source: string;
   volume: string;
   timeframe: string;
+  news_count: number;
 };
 
 type SearchPageProps = {
@@ -183,14 +184,17 @@ export default function SearchPage({ items, trends }: SearchPageProps) {
               <span>🔥</span> Trends populares
             </h4>
             <div className="trends-list">
-              {trends?.slice(0, 20).map((trend) => (
-                <div
-                  key={trend.id}
-                  className="trend-item"
-                  onClick={() => filterByTrend(trend.title)}
-                >
-                  {trend.title}
-                </div>
+              {trends
+                ?.filter((trend) => trend.news_count !== 0)
+                .slice(0, 20)
+                .map((trend) => (
+                  <div
+                    key={trend.id}
+                    className="trend-item"
+                    onClick={() => filterByTrend(trend.title)}
+                  >
+                    {trend.title}
+                  </div>
               ))}
             </div>
           </div>
