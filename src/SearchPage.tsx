@@ -2,6 +2,7 @@ import { useState } from 'react';
 import './SearchPage.css';
 import WebViewPage from './WebViewPage';
 
+
 type Item = {
   author: string;
   date: string;
@@ -12,6 +13,7 @@ type Item = {
   newspaper: string;
 };
 
+
 type TrendsItem = {
   id: number;
   title: string;
@@ -21,15 +23,25 @@ type TrendsItem = {
   news_count: number;
 };
 
+
 type SearchPageProps = {
   items: Item[];
   trends?: TrendsItem[];
 };
 
+
 export default function SearchPage({ items, trends }: SearchPageProps) {
   const [query, setQuery] = useState('');
   const [finaldata, setFinaldata] = useState<Item[]>(items);
   const [selectedUrl, setSelectedUrl] = useState<string | null>(null);
+
+  // Función auxiliar para normalizar texto (eliminar acentos)
+  const normalizeText = (text: string): string => {
+    return text
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
+  };
 
   // Función para formatear fecha relativa
   const formatRelativeTime = (dateString: string): string => {
@@ -62,19 +74,20 @@ export default function SearchPage({ items, trends }: SearchPageProps) {
         return `Hace ${years} año${years !== 1 ? 's' : ''}`;
       }
     } catch (error) {
-      return dateString; // Si hay error, devuelve la fecha original
+      return dateString;
     }
   };
 
   const filterByQuery = () => {
-    const searchWords = query.toLowerCase().trim().split(/\s+/);
+    const searchWords = query.trim().split(/\s+/).map(normalizeText);
     const uniqueTitles = new Set<string>();
+    
     const filtered = items.filter((item) => {
-      const itemText = [item.title, item.subtitles, ...item.tags]
-        .join(' ')
-        .toLowerCase();
+      const itemText = normalizeText(
+        [item.title, item.subtitles, ...item.tags].join(' ')
+      );
       
-      // Verifica que TODAS las palabras de búsqueda estén presentes en el texto
+      // Verifica que TODAS las palabras de búsqueda estén presentes
       const matches = searchWords.every((word) => itemText.includes(word));
       
       if (matches && !uniqueTitles.has(item.title)) {
@@ -83,14 +96,17 @@ export default function SearchPage({ items, trends }: SearchPageProps) {
       }
       return false;
     });
+    
     setFinaldata(filtered);
   };
 
   const filterByTrend = (trendTitle: string) => {
     const uniqueTitles = new Set<string>();
     const filtered = items.filter((item) => {
-      const searchText = trendTitle.toLowerCase();
-      const itemText = [item.title, item.subtitles, ...item.tags].join(' ').toLowerCase();
+      const searchText = normalizeText(trendTitle);
+      const itemText = normalizeText(
+        [item.title, item.subtitles, ...item.tags].join(' ')
+      );
       const matches = itemText.includes(searchText);
       if (matches && !uniqueTitles.has(item.title)) {
         uniqueTitles.add(item.title);
