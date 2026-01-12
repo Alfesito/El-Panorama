@@ -2,17 +2,16 @@ import { useState } from 'react';
 import './SearchPage.css';
 import WebViewPage from './WebViewPage';
 
-
 type Item = {
   author: string;
   date: string;
   subtitles: string;
+  body?: string; // ← AÑADIDO (opcional)
   tags: string[];
   title: string;
   url: string;
   newspaper: string;
 };
-
 
 type TrendsItem = {
   id: number;
@@ -23,12 +22,10 @@ type TrendsItem = {
   news_count: number;
 };
 
-
 type SearchPageProps = {
   items: Item[];
   trends?: TrendsItem[];
 };
-
 
 export default function SearchPage({ items, trends }: SearchPageProps) {
   const [query, setQuery] = useState('');
@@ -80,11 +77,23 @@ export default function SearchPage({ items, trends }: SearchPageProps) {
 
   const filterByQuery = () => {
     const searchWords = query.trim().split(/\s+/).map(normalizeText);
+    
+    if (searchWords.length === 0 || searchWords[0] === '') {
+      setFinaldata(items);
+      return;
+    }
+    
     const uniqueTitles = new Set<string>();
     
     const filtered = items.filter((item) => {
+      // Incluir body si existe
       const itemText = normalizeText(
-        [item.title, item.subtitles, ...item.tags].join(' ')
+        [
+          item.title, 
+          item.subtitles, 
+          item.body || '', // ← AÑADIDO
+          ...item.tags
+        ].join(' ')
       );
       
       // Verifica que TODAS las palabras de búsqueda estén presentes
@@ -101,19 +110,30 @@ export default function SearchPage({ items, trends }: SearchPageProps) {
   };
 
   const filterByTrend = (trendTitle: string) => {
+    const searchWords = trendTitle.trim().split(/\s+/).map(normalizeText);
     const uniqueTitles = new Set<string>();
+    
     const filtered = items.filter((item) => {
-      const searchText = normalizeText(trendTitle);
+      // Incluir body si existe
       const itemText = normalizeText(
-        [item.title, item.subtitles, ...item.tags].join(' ')
+        [
+          item.title, 
+          item.subtitles, 
+          item.body || '', // ← AÑADIDO
+          ...item.tags
+        ].join(' ')
       );
-      const matches = itemText.includes(searchText);
+      
+      // Verifica que TODAS las palabras del trend estén presentes
+      const matches = searchWords.every((word) => itemText.includes(word));
+      
       if (matches && !uniqueTitles.has(item.title)) {
         uniqueTitles.add(item.title);
         return true;
       }
       return false;
     });
+    
     setFinaldata(filtered);
     setQuery(trendTitle);
   };
@@ -153,6 +173,7 @@ export default function SearchPage({ items, trends }: SearchPageProps) {
                       filterByQuery();
                     }
                   }}
+                  placeholder="Buscar noticias..."
                 />
                 <button className="search-btn" onClick={filterByQuery}>
                   Buscar
