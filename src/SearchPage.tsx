@@ -70,11 +70,13 @@ export default function SearchPage({ items, trends }: SearchPageProps) {
     const searchWords = query.toLowerCase().trim().split(/\s+/);
     const uniqueTitles = new Set<string>();
     const filtered = items.filter((item) => {
-      const wordsInItem = [item.title, item.subtitles, ...item.tags]
+      const itemText = [item.title, item.subtitles, ...item.tags]
         .join(' ')
-        .toLowerCase()
-        .split(/\s+/);
-      const matches = searchWords.every((word) => wordsInItem.includes(word));
+        .toLowerCase();
+      
+      // Verifica que TODAS las palabras de búsqueda estén presentes en el texto
+      const matches = searchWords.every((word) => itemText.includes(word));
+      
       if (matches && !uniqueTitles.has(item.title)) {
         uniqueTitles.add(item.title);
         return true;
