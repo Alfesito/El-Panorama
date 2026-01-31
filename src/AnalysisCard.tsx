@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import './AnalysisCard.css';
 import analysisData from './config/json/analisis_historico.json';
 import newsData from './config/json/merged_json.json';
