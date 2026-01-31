@@ -73,7 +73,7 @@ function App() {
   const hasTrendsError = 'e' in trendsState;
 
   return (
-    <div className="app-container">
+    <>
       {loading ? (
         <div className="loading-container">
           <p>🔄 Cargando noticias y trends...</p>
@@ -93,7 +93,7 @@ function App() {
           ⚠️ Trends temporalmente no disponibles
         </div>
       )}
-    </div>
+    </>
   );
 }
 

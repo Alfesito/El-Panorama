@@ -26,7 +26,7 @@ body {
   display: grid;
   grid-template-columns: 1fr 210px;
   gap: 1.5rem;
-  align-items: start;
+  align-items: flex-start;
 }
 
 /* Columna izquierda */
@@ -35,6 +35,40 @@ body {
   flex-direction: column;
   gap: 1.25rem;
   min-width: 0;
+}
+
+/* Tabs container */
+.tabs-container {
+  display: flex;
+  gap: 0.75rem;
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 0.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  flex-shrink: 0;
+}
+
+.tab-btn {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  background: transparent;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.tab-btn:hover {
+  background: #f0f0f0;
+  color: #333;
+}
+
+.tab-btn.active {
+  background: linear-gradient(135deg, #2563eb 0%, #059669 100%);
+  color: #ffffff;
 }
 
 /* Card combinada: Panorama + Búsqueda horizontal */
@@ -328,6 +362,11 @@ body {
     grid-template-columns: 1fr 200px;
     padding: 1.25rem;
     gap: 1.25rem;
+    height: auto;
+  }
+
+  .left-column {
+    height: auto;
   }
 
   .panorama-search-card {
@@ -348,6 +387,11 @@ body {
   .main-layout {
     grid-template-columns: 1fr;
     padding: 1rem;
+    height: auto;
+  }
+
+  .left-column {
+    height: auto;
   }
 
   .right-sidebar {
@@ -449,6 +493,11 @@ body {
   .trend-item {
     font-size: 0.85rem;
     padding: 0.55rem 0.7rem;
+  }
+
+  .tab-btn {
+    font-size: 0.85rem;
+    padding: 0.6rem 0.75rem;
   }
 }
 

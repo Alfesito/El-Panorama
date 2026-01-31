@@ -1,0 +1,127 @@
+[
+  {
+    "tema": "Que pasa en Minnesota con el ICE",
+    "fecha_analisis": "2026-01-31T11:21:32.834645",
+    "total_articulos": 30,
+    "resumen_objetivo": "En Minnesota, específicamente en Minneapolis, se han producido una serie de eventos relacionados con el ICE (Servicio de Inmigración y Control de Aduanas) y la política migratoria del gobierno de Trump. Miles de personas han participado en protestas contra el ICE y la política migratoria de Trump, con manifestaciones en más de 250 ciudades de EE.UU. El Senado de EE.UU. aprobó un acuerdo para financiar la Administración y debatir restricciones al ICE.",
+    "lista_medios": ["El Diario", "El Español", "El Mundo", "El País", "La Razón", "Público"],
+    "total_medios": 6,
+    "noticias_analizadas": 30,
+    "puntos_comunes": [
+      "Las protestas contra el ICE y la política migratoria de Trump",
+      "La aprobación del Senado de EE.UU. para financiar la Administración y debatir restricciones al ICE",
+      "La detención de periodistas que cubrían las protestas",
+      "La investigación de derechos civiles sobre eventos relacionados"
+    ],
+    "analisis_5w1h": {
+      "que": "Protestas contra el ICE y la política migratoria de Trump en Minnesota y otras partes de EE.UU.",
+      "quien": "Miles de personas, incluyendo a Bruce Springsteen, han participado en las protestas. También se han mencionado a periodistas como Don Lemon y a políticos como Trump.",
+      "cuando": "Las protestas y eventos relacionados han ocurrido entre el 30 y 31 de enero de 2026.",
+      "donde": "Las protestas se han llevado a cabo en Minneapolis, Minnesota, y en más de 250 ciudades de EE.UU.",
+      "por_que": "Las protestas son una respuesta a la política migratoria de Trump y a la presencia del ICE en Minnesota.",
+      "como": "Las protestas han sido pacíficas en su mayoría, pero ha habido algunos incidentes de violencia. Los manifestantes han utilizado consignas y carteles para expresar su oposición al ICE y a la política migratoria de Trump."
+    },
+    "estadisticas": {
+      "distribucion_por_medio": {
+        "El País": {
+          "num_articulos": 11,
+          "porcentaje_cobertura": 36.67,
+          "tono": "crítico",
+          "urls": ["https://elpais.com/noticia1", "https://elpais.com/noticia2", "https://elpais.com/noticia3"]
+        },
+        "El Mundo": {
+          "num_articulos": 8,
+          "porcentaje_cobertura": 26.67,
+          "tono": "analítico",
+          "urls": ["https://elmundo.es/noticia1", "https://elmundo.es/noticia2"]
+        },
+        "El Diario": {
+          "num_articulos": 5,
+          "porcentaje_cobertura": 16.67,
+          "tono": "crítico",
+          "urls": ["https://eldiario.es/noticia1", "https://eldiario.es/noticia2"]
+        },
+        "El Español": {
+          "num_articulos": 4,
+          "porcentaje_cobertura": 13.33,
+          "tono": "neutral",
+          "urls": ["https://elespanol.com/noticia1"]
+        },
+        "Público": {
+          "num_articulos": 1,
+          "porcentaje_cobertura": 3.33,
+          "tono": "neutral",
+          "urls": ["https://publico.es/noticia1"]
+        },
+        "La Razón": {
+          "num_articulos": 1,
+          "porcentaje_cobertura": 3.33,
+          "tono": "crítico",
+          "urls": ["https://larazon.es/noticia1"]
+        }
+      }
+    }
+  },
+  {
+    "tema": "¿Qué paso en Adamuz y cómo es la situación hoy?",
+    "fecha_analisis": "2026-01-31T11:27:05.617392",
+    "total_articulos": 30,
+    "resumen_objetivo": "El 30 de enero de 2026, un accidente de tren ocurrió en Adamuz, resultando en 46 víctimas mortales. El gobierno ha prometido llegar hasta el final para esclarecer lo sucedido. Los medios han cubierto el evento desde diferentes perspectivas, destacando la necesidad de mejorar la seguridad en los trenes y la atención a las víctimas.",
+    "lista_medios": ["20 Minutos", "ABC", "El Diario", "El Español", "El Mundo", "El País", "La Razón"],
+    "total_medios": 7,
+    "noticias_analizadas": 30,
+    "puntos_comunes": [
+      "El accidente de tren en Adamuz resultó en 46 muertes",
+      "El gobierno ha prometido esclarecer lo sucedido",
+      "La seguridad en los trenes es un tema de preocupación",
+      "Investigación en curso sobre las causas del accidente"
+    ],
+    "analisis_5w1h": {
+      "que": "Accidente de tren en Adamuz que resultó en 46 víctimas mortales",
+      "quien": "Pasajeros del tren de Renfe, el gobierno de España, autoridades de investigación",
+      "cuando": "30 de enero de 2026",
+      "donde": "Adamuz, Córdoba, España",
+      "por_que": "Causas en investigación - posible fallo mecánico o de señalización",
+      "como": "Colisión de dos trenes de pasajeros, causando múltiples víctimas y heridos"
+    },
+    "estadisticas": {
+      "distribucion_por_medio": {
+        "El País": {
+          "num_articulos": 6,
+          "porcentaje_cobertura": 20.0,
+          "tono": "neutral"
+        },
+        "El Diario": {
+          "num_articulos": 6,
+          "porcentaje_cobertura": 20.0,
+          "tono": "neutral"
+        },
+        "ABC": {
+          "num_articulos": 5,
+          "porcentaje_cobertura": 16.67,
+          "tono": "neutral"
+        },
+        "El Mundo": {
+          "num_articulos": 5,
+          "porcentaje_cobertura": 16.67,
+          "tono": "neutral"
+        },
+        "El Español": {
+          "num_articulos": 5,
+          "porcentaje_cobertura": 16.67,
+          "tono": "neutral"
+        },
+        "20 Minutos": {
+          "num_articulos": 2,
+          "porcentaje_cobertura": 6.67,
+          "tono": "neutral"
+        },
+        "La Razón": {
+          "num_articulos": 1,
+          "porcentaje_cobertura": 3.33,
+          "tono": "neutral"
+        }
+      }
+    }
+  }
+]

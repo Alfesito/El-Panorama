@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import './SearchPage.css';
 import WebViewPage from './WebViewPage';
+import AnalysisCard from './AnalysisCard';
 
 type Item = {
   author: string;
@@ -11,6 +12,7 @@ type Item = {
   title: string;
   url: string;
   newspaper: string;
+  image?: string;
 };
 
 type TrendsItem = {
@@ -31,6 +33,7 @@ export default function SearchPage({ items, trends }: SearchPageProps) {
   const [query, setQuery] = useState('');
   const [finaldata, setFinaldata] = useState<Item[]>(items);
   const [selectedUrl, setSelectedUrl] = useState<string | null>(null);
+  const [showAnalysis, setShowAnalysis] = useState(false);
 
   // Función auxiliar para normalizar texto (eliminar acentos)
   const normalizeText = (text: string): string => {
@@ -146,7 +149,29 @@ export default function SearchPage({ items, trends }: SearchPageProps) {
       <div className="main-layout">
         {/* Columna izquierda */}
         <div className="left-column">
-          {/* Card combinada: Panorama + Buscador horizontal */}
+          {/* Pestañas */}
+          <div className="tabs-container">
+            <button 
+              className={`tab-btn ${!showAnalysis ? 'active' : ''}`}
+              onClick={() => setShowAnalysis(false)}
+            >
+              📰 Noticias
+            </button>
+            <button 
+              className={`tab-btn ${showAnalysis ? 'active' : ''}`}
+              onClick={() => setShowAnalysis(true)}
+            >
+              📊 Análisis
+            </button>
+          </div>
+
+          {showAnalysis ? (
+            // Sección de Análisis
+            <AnalysisCard />
+          ) : (
+            // Sección de Noticias (original)
+            <>
+              {/* Card combinada: Panorama + Buscador horizontal */}
           <div className="panorama-search-card">
             {/* Header El Panorama */}
             <div className="panorama-section">
@@ -213,6 +238,8 @@ export default function SearchPage({ items, trends }: SearchPageProps) {
               ))}
             </ul>
           </div>
+            </>
+          )}
         </div>
 
         {/* Sidebar derecha - Solo Trends */}
